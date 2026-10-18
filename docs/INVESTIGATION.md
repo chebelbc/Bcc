@@ -91,9 +91,9 @@ module used in tests; they have **not** yet been compared against a real install
    module (`tests/MockModules/MilestonePSTools`) whose command and parameter names are checked against the catalog.
    Before production use, run `Export-PSToolsCatalog.ps1` on a Windows workstation with 25.2.61 installed, compare it with
    the static catalog, and run the read-only workflows against a **test** system.
-2. **The WPF application has not been built with the real XAML compiler here.** On Linux, the UI C# code is compiled
-   against WPF reference assemblies with generated XAML stubs, and the XAML is checked by a static linter. The CI
-   workflow builds the real application on Windows; that job has not run yet at the time of writing.
+2. **The WPF application builds on Windows but has not been run interactively.** The CI job on `windows-latest`
+   builds the whole solution with the real XAML compiler and checks the output layout (first green run: CI run #1 on
+   this branch). Nobody has yet opened the UI and clicked through it, so rendering and interaction problems may remain.
 3. **DTO property names** come from the module's own usage. For example, `RecordingFramerate` is used in
    `docs/commands/en-US/Set-VmsCamera.md` and `$cam.RecordingStorage` in `Public/Reports/Get-VmsCameraReport.ps1`. The
    worker reads properties by name and tolerates missing ones, but every mapping should still be checked on a real system.

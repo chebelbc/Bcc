@@ -7,9 +7,8 @@ application is **not** a PowerShell terminal: the user picks objects, fills in t
 application runs the corresponding MilestonePSTools commands in an isolated worker process.
 
 > **Status: early version (0.1.0), not yet validated against a real XProtect system.** The worker engine, protocol
-> and workflows are covered by automated tests against a mock of MilestonePSTools. The WPF application compiles
-> against the WPF reference assemblies, and its XAML is statically checked, but it has not yet been exercised on Windows
-> with the real module. See [Status and known gaps](#status-and-known-gaps).
+> and workflows are covered by automated tests against a mock of MilestonePSTools. The WPF application builds on
+> Windows in CI, but it has not yet been run interactively or used with the real module. See [Status and known gaps](#status-and-known-gaps).
 
 This is an independent project. It is not affiliated with or supported by Milestone Systems.
 
