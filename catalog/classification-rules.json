@@ -1,0 +1,446 @@
+{
+  "$comment": "Shared command classification rules. Consumed by tools/catalog/classification.py (static catalog) and by MilestoneAdmin.Domain CommandClassifier (runtime catalog). Changing a rule here changes both. Every override must carry a reason.",
+  "rulesVersion": "1.0",
+  "riskLevels": [
+    {
+      "id": "ReadOnly",
+      "matrix": "Read",
+      "requiresReview": false,
+      "requiresStrongConfirmation": false,
+      "description": "Reads VMS state. No configuration change."
+    },
+    {
+      "id": "Sensitive",
+      "matrix": "Read",
+      "requiresReview": true,
+      "requiresStrongConfirmation": true,
+      "description": "Reads data that includes secrets (passwords, tokens, connection strings). Output is never logged."
+    },
+    {
+      "id": "Session",
+      "matrix": "Read",
+      "requiresReview": false,
+      "requiresStrongConfirmation": false,
+      "description": "Changes only the PowerShell session's connection state."
+    },
+    {
+      "id": "LocalState",
+      "matrix": "Write",
+      "requiresReview": true,
+      "requiresStrongConfirmation": false,
+      "description": "Changes local files or module settings on this workstation, not the VMS."
+    },
+    {
+      "id": "Operational",
+      "matrix": "Write",
+      "requiresReview": true,
+      "requiresStrongConfirmation": false,
+      "description": "Triggers activity (events, alarms, scans, exports) without changing stored configuration. May trigger VMS rules."
+    },
+    {
+      "id": "Create",
+      "matrix": "Write",
+      "requiresReview": true,
+      "requiresStrongConfirmation": false,
+      "description": "Adds new configuration to the VMS."
+    },
+    {
+      "id": "Modify",
+      "matrix": "Write",
+      "requiresReview": true,
+      "requiresStrongConfirmation": false,
+      "description": "Changes existing VMS configuration."
+    },
+    {
+      "id": "HighImpact",
+      "matrix": "Write",
+      "requiresReview": true,
+      "requiresStrongConfirmation": true,
+      "description": "Changes with system-wide or hard-to-reverse effect (drivers, certificates, licenses, server registration, moving hardware)."
+    },
+    {
+      "id": "Delete",
+      "matrix": "Delete",
+      "requiresReview": true,
+      "requiresStrongConfirmation": true,
+      "description": "Removes configuration. May cause loss of recordings."
+    }
+  ],
+  "verbRisk": {
+    "Get": "ReadOnly",
+    "Find": "ReadOnly",
+    "Test": "ReadOnly",
+    "Assert": "ReadOnly",
+    "Select": "ReadOnly",
+    "Resolve": "ReadOnly",
+    "Split": "ReadOnly",
+    "Join": "ReadOnly",
+    "Trace": "ReadOnly",
+    "Wait": "ReadOnly",
+    "ConvertFrom": "ReadOnly",
+    "ConvertTo": "ReadOnly",
+    "Resize": "ReadOnly",
+    "Export": "ReadOnly",
+    "Connect": "Session",
+    "Disconnect": "Session",
+    "Save": "LocalState",
+    "Send": "Operational",
+    "Start": "Operational",
+    "Stop": "Operational",
+    "Add": "Create",
+    "New": "Create",
+    "Copy": "Create",
+    "Import": "Create",
+    "Install": "HighImpact",
+    "Set": "Modify",
+    "Update": "Modify",
+    "Move": "HighImpact",
+    "Invoke": "Modify",
+    "Remove": "Delete",
+    "Clear": "Delete"
+  },
+  "confirmImpactHighRaisesTo": "HighImpact",
+  "commandRiskOverrides": {
+    "Get-VmsHardwarePassword": {
+      "risk": "Sensitive",
+      "reason": "Returns the plain-text password stored for a hardware device."
+    },
+    "Get-VmsToken": {
+      "risk": "Sensitive",
+      "reason": "Returns a bearer token for the current VMS session."
+    },
+    "Get-VmsConnectionString": {
+      "risk": "Sensitive",
+      "reason": "Returns SQL connection strings from the management server."
+    },
+    "Select-VmsSite": {
+      "risk": "Session",
+      "reason": "Changes which site subsequent commands target."
+    },
+    "Clear-VmsCache": {
+      "risk": "Session",
+      "reason": "Clears the session's cached configuration items only."
+    },
+    "Remove-VmsConnectionProfile": {
+      "risk": "LocalState",
+      "reason": "Deletes a locally stored connection profile, not VMS configuration."
+    },
+    "Set-VmsModuleConfig": {
+      "risk": "LocalState",
+      "reason": "Changes MilestonePSTools module settings for the current Windows user."
+    },
+    "Start-VmsHardwareScan": {
+      "risk": "Operational",
+      "reason": "Makes recording servers probe network addresses; no configuration is stored."
+    },
+    "Start-Export": {
+      "risk": "Operational",
+      "reason": "Exports recorded media to local files; no configuration change, but evidence-relevant and audited."
+    },
+    "Start-VmsRestrictedLiveMode": {
+      "risk": "Modify",
+      "reason": "Enables restricted live mode on devices, changing who can view them."
+    },
+    "Stop-VmsRestrictedLiveMode": {
+      "risk": "Modify",
+      "reason": "Disables restricted live mode on devices."
+    },
+    "Invoke-Method": {
+      "risk": "HighImpact",
+      "reason": "Invokes arbitrary Configuration API methods; the effect depends on the method name and cannot be classified in advance."
+    },
+    "Invoke-ServerConfigurator": {
+      "risk": "HighImpact",
+      "reason": "Runs Server Configurator on the local machine (server registration/encryption settings)."
+    },
+    "Invoke-VmsLicenseActivation": {
+      "risk": "HighImpact",
+      "reason": "Activates licenses online and changes the VMS license state."
+    },
+    "Import-VmsLicense": {
+      "risk": "HighImpact",
+      "reason": "Replaces the VMS license file."
+    },
+    "Set-VmsLicense": {
+      "risk": "HighImpact",
+      "reason": "Changes the software license code of the VMS."
+    },
+    "Set-XProtectCertificate": {
+      "risk": "HighImpact",
+      "reason": "Changes certificates used by local XProtect services."
+    },
+    "Set-VmsConnectionString": {
+      "risk": "HighImpact",
+      "reason": "Changes management server database connection strings."
+    },
+    "New-AlarmCondition": {
+      "risk": "ReadOnly",
+      "reason": "Constructs a local filter object for Get-AlarmLine; sends nothing to the VMS."
+    },
+    "New-AlarmOrder": {
+      "risk": "ReadOnly",
+      "reason": "Constructs a local sort object for Get-AlarmLine; sends nothing to the VMS."
+    },
+    "Copy-EvidenceLock": {
+      "risk": "Create",
+      "reason": "Creates a new evidence lock based on an existing one."
+    },
+    "Export-VmsHardware": {
+      "risk": "Sensitive",
+      "reason": "Writes hardware user names and plain-text passwords into the exported CSV/XLSX file (verified in MilestonePSTools/Private/ExportHardwareCsv.ps1 and ImportVmsHardwareExcelFunctions.ps1). The exported file must be protected."
+    }
+  },
+  "sideEffectRules": {
+    "Export": "WritesLocalFile",
+    "Start-Export": "WritesLocalFile",
+    "Get-Snapshot": "MayWriteLocalFile",
+    "Save-VmsConnectionProfile": "WritesLocalFile",
+    "Export-VmsLicenseRequest": "WritesLocalFile"
+  },
+  "sensitiveParameters": {
+    "$comment": "Switches/parameters that cause otherwise read-only commands to return secrets. The GUI warns and never logs the output.",
+    "Get-VmsCameraReport": [
+      "IncludePlainTextPasswords"
+    ]
+  },
+  "secretParameter": {
+    "types": [
+      "PSCredential",
+      "PSCredential[]",
+      "SecureString",
+      "SecureString[]"
+    ],
+    "namePattern": "(?i)(password|secret|credential|apikey|privatekey)$"
+  },
+  "categories": [
+    {
+      "id": "Connection",
+      "label": "Connection",
+      "nounPattern": "^(Vms|ManagementServer|VmsConnection|VmsConnectionProfile|VmsToken|LoginSettings|VmsOpenIdConfig|VmsCache)$"
+    },
+    {
+      "id": "System",
+      "label": "System",
+      "nounPattern": "^(VmsManagementServer|ManagementServerConfig|VmsSite|VmsSiteInfo|VmsRecordingServer|RecorderConfig|MobileServerInfo|VmsFailoverGroup|VmsFailoverRecorder|RegisteredService|VmsConnectionString|XProtectCertificate|ServerConfigurator|VmsTask)$"
+    },
+    {
+      "id": "Hardware",
+      "label": "Hardware",
+      "nounPattern": "^(VmsHardware|VmsHardwareDriver|VmsHardwarePassword|VmsHardwareScan|HardwareSetting|StableFPS)$"
+    },
+    {
+      "id": "Devices",
+      "label": "Cameras & Devices",
+      "nounPattern": "^(VmsCamera|VmsMicrophone|VmsSpeaker|VmsMetadata|VmsInput|VmsOutput|VmsDevice|XProtectDevice|VmsDeviceGroup|VmsDeviceGroupMember|VmsDeviceGroupPath|Camera|VmsParentItem)$"
+    },
+    {
+      "id": "DeviceConfig",
+      "label": "Camera Configuration",
+      "nounPattern": "^(VmsCameraStream|VmsCameraMotion|VmsDeviceGeneralSetting|VmsDeviceStreamSetting|VmsDeviceEvent|VmsDeviceStorage|CameraSetting|MicrophoneSetting|SpeakerSetting|MetadataSetting|InputSetting|OutputSetting|Stream|StreamProperties)$"
+    },
+    {
+      "id": "Security",
+      "label": "Users & Roles",
+      "nounPattern": "^(VmsBasicUser|VmsBasicUserClaim|VmsRole|VmsRoleClaim|VmsRoleMember|VmsRoleOverallSecurity|OverallSecurity|DeviceAcl|VmsLoginProvider|VmsLoginProviderClaim|VmsTrustedIssuer)$"
+    },
+    {
+      "id": "RulesEvents",
+      "label": "Rules, Events & Alarms",
+      "nounPattern": "^(VmsRule|UserDefinedEvent|GenericEvent|GenericEventDataSource|Events|EventLine|Alarm|AlarmLine|AlarmStatistics|AlarmCondition|AlarmOrder|VmsAlarmDefinition|VmsWebhook)$"
+    },
+    {
+      "id": "Storage",
+      "label": "Storage",
+      "nounPattern": "^(VmsStorage|VmsArchiveStorage|VmsStorageRetention)$"
+    },
+    {
+      "id": "SmartClient",
+      "label": "Smart Client",
+      "nounPattern": "^(VmsView|VmsViewGroup|VmsViewGroupAcl|VmsClientProfile|VmsClientProfileAttributes)$"
+    },
+    {
+      "id": "Reports",
+      "label": "Reports",
+      "nounPattern": "^(VmsCameraReport|CameraRecordingStats|VideoDeviceStatistics)$"
+    },
+    {
+      "id": "Maintenance",
+      "label": "Maintenance & Status",
+      "nounPattern": "^(VmsLog|VmsDeviceStatus|CurrentDeviceStatus|ItemState|WhoIsOnline|VmsRequirementsMet|VmsModuleConfig)$"
+    },
+    {
+      "id": "Media",
+      "label": "Media & Evidence",
+      "nounPattern": "^(Snapshot|Export|Playback|PlaybackInfo|SequenceData|Bookmark|EvidenceLock|VmsRestrictedMedia|VmsRestrictedLiveMode|VideoSource|Image|VmsMetadataRecord|VmsMetadataLiveRecord|BankTable)$"
+    },
+    {
+      "id": "Licensing",
+      "label": "Licensing",
+      "nounPattern": "^(VmsLicense|VmsLicenseActivation|VmsLicenseDetails|VmsLicenseInfo|VmsLicenseOverview|VmsLicenseRequest|VmsLicensedFeature|VmsLicensedProducts|VmsSystemLicense)$"
+    },
+    {
+      "id": "Lpr",
+      "label": "License Plate Recognition",
+      "nounPattern": "^(VmsLprEvent|VmsLprMatchList|VmsLprMatchListEntry)$"
+    },
+    {
+      "id": "Advanced",
+      "label": "Advanced (SDK / Config API)",
+      "nounPattern": "^(ConfigurationItem|ConfigurationItemProperty|ConfigurationApiProperties|VmsConfigItemPath|IConfigurationService|IServerCommandService|VmsIServiceRegistrationService|Method|MethodInfo|Kind|PlatformItem|VideoOSItem|VmsVideoOSItem|VmsVmoClient|Translations|MipMessage|MipMessageIdList|IAlarmClient|RecorderStatusService2|GisPoint)$"
+    }
+  ],
+  "fallbackCategory": "Uncategorized",
+  "expertOnlyCommands": {
+    "Invoke-Method": "Arbitrary Configuration API method invocation.",
+    "Get-IConfigurationService": "Returns a raw WCF service proxy.",
+    "Get-IServerCommandService": "Returns a raw WCF service proxy.",
+    "Get-VmsIServiceRegistrationService": "Returns a raw WCF service proxy.",
+    "Get-IAlarmClient": "Returns a raw alarm client proxy.",
+    "Get-RecorderStatusService2": "Returns a raw recorder status service proxy.",
+    "Get-VmsVmoClient": "Returns a raw VMO client.",
+    "Get-MethodInfo": "Configuration API introspection.",
+    "Trace-Events": "Long-running event subscription that writes to the console.",
+    "Send-MipMessage": "Sends arbitrary MIP messages."
+  },
+  "appManagedCommands": {
+    "Connect-Vms": "Handled by the Connect wizard / connection service.",
+    "Connect-ManagementServer": "Legacy connect command; the app uses Connect-Vms.",
+    "Disconnect-Vms": "Handled by the connection service.",
+    "Disconnect-ManagementServer": "Legacy disconnect command; the app uses Disconnect-Vms.",
+    "Select-VmsSite": "Handled by the site selector.",
+    "Save-VmsConnectionProfile": "Handled by connection profiles.",
+    "Get-VmsConnectionProfile": "Handled by connection profiles.",
+    "Remove-VmsConnectionProfile": "Handled by connection profiles."
+  },
+  "unsupportedParameterTypes": [
+    "ScriptBlock",
+    "ScriptBlock[]",
+    "RunspacePool",
+    "Object",
+    "Object[]",
+    "PSObject",
+    "PSObject[]",
+    "Image",
+    "Byte[]"
+  ],
+  "unsupportedParameterTypesReason": "Script blocks are never accepted from UI input (injection risk); raw objects, images and runspace pools cannot be represented as typed controls.",
+  "objectTypes": {
+    "RecordingServer": {
+      "label": "Recording Server",
+      "producer": "Get-VmsRecordingServer"
+    },
+    "Hardware": {
+      "label": "Hardware",
+      "producer": "Get-VmsHardware"
+    },
+    "Camera": {
+      "label": "Camera",
+      "producer": "Get-VmsCamera"
+    },
+    "Microphone": {
+      "label": "Microphone",
+      "producer": "Get-VmsMicrophone"
+    },
+    "Speaker": {
+      "label": "Speaker",
+      "producer": "Get-VmsSpeaker"
+    },
+    "Metadata": {
+      "label": "Metadata device",
+      "producer": "Get-VmsMetadata"
+    },
+    "InputEvent": {
+      "label": "Input",
+      "producer": "Get-VmsInput"
+    },
+    "Output": {
+      "label": "Output",
+      "producer": "Get-VmsOutput"
+    },
+    "Role": {
+      "label": "Role",
+      "producer": "Get-VmsRole"
+    },
+    "BasicUser": {
+      "label": "Basic user",
+      "producer": "Get-VmsBasicUser"
+    },
+    "Storage": {
+      "label": "Storage",
+      "producer": "Get-VmsStorage"
+    },
+    "ArchiveStorage": {
+      "label": "Archive storage",
+      "producer": "Get-VmsArchiveStorage"
+    },
+    "View": {
+      "label": "View",
+      "producer": "Get-VmsView"
+    },
+    "ViewGroup": {
+      "label": "View group",
+      "producer": "Get-VmsViewGroup"
+    },
+    "ClientProfile": {
+      "label": "Smart Client profile",
+      "producer": "Get-VmsClientProfile"
+    },
+    "FailoverGroup": {
+      "label": "Failover group",
+      "producer": "Get-VmsFailoverGroup"
+    },
+    "FailoverRecorder": {
+      "label": "Failover recorder",
+      "producer": "Get-VmsFailoverRecorder"
+    },
+    "LoginProvider": {
+      "label": "External login provider",
+      "producer": "Get-VmsLoginProvider"
+    },
+    "LprMatchList": {
+      "label": "LPR match list",
+      "producer": "Get-VmsLprMatchList"
+    },
+    "RestrictedMedia": {
+      "label": "Restricted media",
+      "producer": "Get-VmsRestrictedMedia"
+    },
+    "TrustedIssuer": {
+      "label": "Trusted issuer",
+      "producer": "Get-VmsTrustedIssuer"
+    },
+    "HardwareDriver": {
+      "label": "Hardware driver",
+      "producer": "Get-VmsHardwareDriver"
+    },
+    "AlarmDefinition": {
+      "label": "Alarm definition",
+      "producer": "Get-VmsAlarmDefinition"
+    },
+    "UserDefinedEvent": {
+      "label": "User-defined event",
+      "producer": "Get-UserDefinedEvent"
+    },
+    "GenericEvent": {
+      "label": "Generic event",
+      "producer": "Get-GenericEvent"
+    },
+    "GenericEventDataSource": {
+      "label": "Generic event data source",
+      "producer": "Get-GenericEventDataSource"
+    },
+    "Bookmark": {
+      "label": "Bookmark",
+      "producer": "Get-Bookmark"
+    },
+    "MarkedData": {
+      "label": "Evidence lock",
+      "producer": "Get-EvidenceLock"
+    },
+    "VmsHardwareScanResult": {
+      "label": "Hardware scan result",
+      "producer": "Start-VmsHardwareScan"
+    }
+  },
+  "pathParameterNamePattern": "(?i)^(path|literalpath|filepath|outputpath|destination|destinationpath|exportpath|outputfile|outputdirectory|directory|file|csvpath|logpath)$"
+}

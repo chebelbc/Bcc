@@ -1,0 +1,14 @@
+# Build output
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+*.nupkg
+artifacts/
+# Python
+__pycache__/
+*.pyc
+# Local runtime catalogs / audit exports generated on a workstation
+*.runtime.json
