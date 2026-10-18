@@ -45,6 +45,12 @@ authorization.
 * **CSV files with passwords** (the `Import-VmsHardware` format allows a `Password` column) trigger a warning. Values
   are masked in the preview and held as `SecureString`. `Export-VmsHardware` writes plain-text passwords
   (see docs/INVESTIGATION.md), so it is classified Sensitive and not offered as a guided export.
+* **Excel files** are read by the application's own reader. DTDs and external entities are refused, nothing is
+  resolved over the network, and part sizes (64 MB), rows (100,000) and columns (500) are limited. Cell values are
+  read as data only; formulas are never evaluated. Exported workbooks store every value as text, so an exported
+  value cannot become a formula.
+* **MilestonePSTools workbooks** (from `Export-VmsHardware`) contain plain-text device passwords. The import page
+  warns when it detects them, and the workbook is passed to `Import-VmsHardware` by path; its contents are not logged.
 * **Telemetry.** The application sends no telemetry of its own. MilestonePSTools has its own telemetry. By default
   the application sets `VMS_ApplicationInsights__Enabled=false` for its worker process. The user can choose to follow
   the module's own setting instead. The application never changes the module-wide setting (`Set-VmsModuleConfig`).
@@ -82,9 +88,16 @@ authorization.
   given.
 * **Bulk operations** report per-object results and never hide partial failures. Failed items can be retried or
   exported.
+* **Quick actions** run one documented command each. Inputs are generated from that command's catalog metadata
+  (typed, with secrets as secure inputs). Delete operations and other destructive actions always require strong
+  confirmation, and objects that are already in the requested state are skipped.
+* **Site switching** requires a confirmation. Afterwards the System page and the activity log show which site
+  commands target.
 
 ## Least privilege and system changes
 
+* The installer installs for the current user by default and needs no administrator rights. An all-users install
+  happens only when the user picks it in the installer's own dialog.
 * The application manifest requests `asInvoker`. The application **never elevates itself**. Commands that require
   elevation are flagged in pre-checks and Command Explorer.
 * The application **never silently** changes the execution policy, trusts the PowerShell Gallery, installs package

@@ -27,11 +27,21 @@ This is an independent project. It is not affiliated with or supported by Milest
 * **System, Recording Servers, Hardware, Cameras & Devices, Storage, Users & Roles, Rules & Events, Smart Client:**
   searchable, filterable inventory built from structured data. Object pickers, never GUIDs.
 * **Add Hardware wizard:** scan (express, address list or ranges, known driver), select results, add, then configure
-  channels, names and storage. Each step is reviewed before it is applied.
-* **CSV onboarding** in the documented `Import-VmsHardware` format, validated offline and against the connected
-  site ("120 rows detected, 116 valid, 4 invalid"), with invalid rows inspectable before anything runs.
-* **Bulk camera changes:** enable/disable, rename (pattern or CSV), recording settings, storage. **Hardware:**
-  enable/disable, remove, reveal password (Expert Mode, audited).
+  channels, names, storage and an optional device group. Each step is reviewed before it is applied.
+* **Bulk onboarding from CSV or Excel (.xlsx)** in the documented `Import-VmsHardware` column format, including the
+  `DeviceGroups` column. Files are validated offline and against the connected site ("120 rows detected, 116 valid,
+  4 invalid"), and invalid rows can be inspected before anything runs. Excel and CSV templates can be downloaded, and
+  the rows to fix can be exported as Excel or CSV.
+* **MilestonePSTools workbooks:** an `.xlsx` exported by `Export-VmsHardware` is detected and imported by
+  MilestonePSTools itself (`Import-VmsHardware`), with a preview, an optional "update existing" and strong confirmation.
+* **Bulk camera changes:** enable/disable, rename (pattern or CSV), recording settings, storage.
+* **Hardware:** enable/disable, edit (name, description, address), update device credentials (optionally also on
+  the device), remove, reveal password (Expert Mode, audited).
+* **Storage:** add a recording storage, remove storages that are not the default and not in use.
+* **Users & Roles:** create roles, add and remove role members, create basic users, enable or lock them out, reset
+  passwords, remove them.
+* **Rules & Events:** enable, disable and rename rules. **Smart Client:** create, rename and remove view groups.
+* **Sites:** switch between the sites of a Milestone Federated Architecture (System page).
 
 **Operations**
 * **Maintenance:** live device status and environment and recorder reachability checks.
@@ -64,12 +74,15 @@ Details, the capability matrix and firewall notes: [COMPATIBILITY.md](COMPATIBIL
 
 ## Installation
 
-There is no installer yet.
-
-1. Build on Windows (see [DEVELOPMENT.md](DEVELOPMENT.md)), or download the `XProtectAdminAssistant` artifact from a
-   CI run of this repository.
-2. Copy the whole output folder (it contains `XProtectAdminAssistant.exe`, `worker\` and `catalog\`) to the workstation,
-   for example `C:\Program Files\XProtect Admin Assistant\`.
+1. Download the `XProtectAdminAssistant-<version>` artifact from a CI run of this repository
+   (*Actions* → latest run → *Artifacts*), or build it yourself (see [DEVELOPMENT.md](DEVELOPMENT.md)). It contains:
+   * `XProtectAdminAssistant-Setup-<version>.exe`, an installer. It installs for the current user by default (no
+     administrator rights needed) and offers "all users" in its first dialog. It checks for .NET Framework 4.8 and
+     creates a Start menu shortcut. Uninstalling keeps your settings, audit log and saved passwords.
+   * `XProtectAdminAssistant-<version>-portable.zip`, the same files without an installer. Unzip the whole folder and
+     keep `worker\` and `catalog\` next to `XProtectAdminAssistant.exe`.
+   The files are not code-signed; Windows SmartScreen may warn about an unknown publisher.
+2. Run the installer, or unzip the portable version.
 3. If MilestonePSTools is not installed yet, install it from Windows PowerShell 5.1:
    `Install-Module MilestonePSTools -Scope CurrentUser`. The setup wizard can open a visible PowerShell window that
    runs this command after you confirm. PowerShell may then ask about the NuGet provider and the untrusted PSGallery
@@ -100,21 +113,22 @@ The request defined four MVP phases. Their current state:
 | Phase | Scope | State |
 |---|---|---|
 | 1 | Environment checker, connection wizard and profiles, dashboard, dynamic command discovery, recording server, hardware and camera inventory, basic camera properties, Command Explorer, generated PowerShell, audit log, error handling | Implemented |
-| 2 | Add hardware, enable/disable cameras, rename devices, hardware configuration, camera configuration, CSV onboarding | Implemented; hardware configuration is limited to enable/disable/remove |
-| 3 | Storage, users/roles, rules/events, reports, Smart Client | Read-only inventories and reports implemented; camera storage changes implemented; no other write workflows yet |
+| 2 | Add hardware, enable/disable cameras, rename devices, hardware configuration, camera configuration, CSV onboarding | Implemented, plus Excel onboarding, device groups and MilestonePSTools workbook import |
+| 3 | Storage, users/roles, rules/events, reports, Smart Client | Implemented as listed under Features: inventories, reports, and guided changes for storage, roles and members, basic users, rules and view groups |
 | 4 | Job Builder | Implemented (camera source, filters, one action) |
 
 Known gaps and limitations:
 
-* **Not yet run against real MilestonePSTools or XProtect**, and the WPF UI has not been run on Windows. The first
-  Windows run should follow the manual plan in [TESTING.md](TESTING.md), using a test system only.
-* **No site switching** in a Milestone Federated Architecture (`Select-VmsSite`). Work happens on the site you
-  connected to.
-* **No hardware rename or other hardware settings** beyond enable/disable/remove. No device group assignment for new
-  hardware (`Add-VmsHardware` does not do this; `Import-VmsHardware` in Expert Mode can).
+* **Not yet run against real MilestonePSTools or XProtect**, and the WPF UI has not been run interactively on Windows.
+  The first Windows run should follow the manual plan in [TESTING.md](TESTING.md), using a test system only.
+* **Excel files** are read by the application's own reader. It is tested with files written by openpyxl, XlsxWriter
+  and LibreOffice, but not yet with files saved by Microsoft Excel itself.
 * **No configuration backup/restore**, because MilestonePSTools has no such command.
-* Write workflows for users/roles, rules, Smart Client and storage configuration are not implemented. Those commands
-  are available through Command Explorer forms in Expert Mode, where suitable.
+* **Not covered by guided actions:** role permissions (configure them in Management Client; MilestonePSTools role
+  permission commands are in Command Explorer), alarm definitions (`Set-VmsAlarmDefinition` has no Enabled
+  parameter), Smart Client profiles and views, archive storages and storage retention changes. Commands for these are
+  available through Command Explorer forms in Expert Mode, where suitable.
+* **The installer and executables are not code-signed.**
 
 ## License
 

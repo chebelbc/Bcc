@@ -38,9 +38,9 @@ per session and replaces it on reconnect, after a crash, or when an operation mu
 | `MilestoneAdmin.Protocol` | netstandard2.0 | Dependency-free JSON reader/writer, message types, `PipelineStep`, typed `ParameterValue`s, `ErrorInfo`. Shared by both processes. |
 | `MilestoneAdmin.Worker.Engine` | net48 (production), net8.0 (tests only) | The PowerShell host: everything that touches `System.Management.Automation`. |
 | `MilestoneAdmin.Worker` | net48 x64 exe (production), net8.0 (tests) | Thin `Main`: reads requests from stdin, writes events to stdout. |
-| `MilestoneAdmin.Domain` | netstandard2.0 | Command catalog and classifier, capabilities and version rules, change plans and diffs, CSV parsing and validation, PowerShell script generation for Expert Mode, audit record. No I/O. |
+| `MilestoneAdmin.Domain` | netstandard2.0 | Command catalog and classifier, capabilities and version rules, change plans and diffs, CSV and .xlsx reading/writing and hardware file validation, PowerShell script generation for Expert Mode, audit record. |
 | `MilestoneAdmin.PSTools` | netstandard2.0 | The only GUI-side code that knows MilestonePSTools command names (`Commands/PsCommands.cs`), DTO mapping, `IPowerShellExecutor` and the worker client. |
-| `MilestoneAdmin.Application` | netstandard2.0 | Use cases: connection, environment checks, inventory, workflows (Add Hardware, CSV onboarding, camera edits, hardware enable/disable/remove), the review → WhatIf → apply runner, bulk operations, reports, Job Builder, Command Explorer forms, error translation, global search. |
+| `MilestoneAdmin.Application` | netstandard2.0 | Use cases: connection, environment checks, inventory, workflows (Add Hardware, CSV/Excel onboarding, MilestonePSTools workbook import, camera edits, hardware enable/disable/remove), quick actions, site selection, the review → WhatIf → apply runner, bulk operations, reports, Job Builder, Command Explorer forms, error translation, global search. |
 | `MilestoneAdmin.Infrastructure` | netstandard2.0 | File-based stores (settings, profiles, jobs, catalog cache), Windows Credential Manager, the hash-chained JSONL audit log, diagnostics log, worker factory. |
 | `MilestoneAdmin.UI` | net48 WPF exe | Shell, navigation, pages, wizards, dialogs; hand-written MVVM (`ObservableObject`, `RelayCommand`, `AsyncCommand`). |
 | `tests/MilestoneAdmin.Tests` | net8.0 xUnit | Engine, protocol, end-to-end (real worker process), domain, application and drift tests against a mock module. |
@@ -138,25 +138,58 @@ new value), the risk level, warnings, the generated PowerShell (Expert Mode) and
 
   | Screen | Requested steps covered |
   |---|---|
-  | 1. Recording server and discovery | Select recording server; enter IP addresses, host names or ranges (or an express scan); HTTP/HTTPS |
+  | 1. Recording server and discovery | Shows the selected site (switched on the System page); select recording server; enter IP addresses, host names or ranges (or an express scan); HTTP/HTTPS |
   | 2. Device credentials and driver | Provide credentials securely; select a driver or let the scan identify it |
   | 3. Select devices | Discover devices (`Start-VmsHardwareScan`); choose which results to add; optional hardware names |
   | 4. Review and add | Review planned changes; apply (`Add-VmsHardware`) with per-device results |
-  | 5. Configure cameras | Select channels; configure names and storage; reviewed again before `Set-VmsCamera` / `Set-VmsDeviceStorage` |
+  | 5. Configure cameras | Select channels; configure names, storage and an optional device group; reviewed again before `Set-VmsCamera` / `Set-VmsDeviceStorage` / `New-VmsDeviceGroup` + `Add-VmsDeviceGroupMember` |
   | 6. Done | Success/failure summary; inventory refreshed |
 
   Pre-checks can be run on any screen. They cover: worker running, authenticated session, required commands present in
   the installed module, XProtect version requirements, licensed-feature and elevation requirements (warnings), user
   permissions, and TCP reachability of the recording server's web server from this workstation. Address syntax and
   duplicates are validated as the user types.
-  **Site selection** (the first step of the requested workflow) is not implemented yet. The wizard works on the site the
-  session is connected to. Switching between sites of a Milestone Federated Architecture (`Select-VmsSite`) is a known
-  gap, listed in README.md.
-* **CSV onboarding** follows the documented `Import-VmsHardware` column set. It validates offline and online (recording
-  servers, installed drivers, storage names, duplicate and existing addresses) and shows *"N rows detected, X valid, Y
-  invalid"* before anything runs.
+* **Sites.** In a Milestone Federated Architecture, MilestonePSTools commands work on the selected site. The System page
+  lists the sites (`Get-VmsSite -ListAvailable`) and switches with `Select-VmsSite` after a confirmation. The session
+  then re-reads the management server and drops the cached inventory, which is reloaded from the new site.
+* **Bulk onboarding** reads CSV files (`CsvParser`) and Excel workbooks (`XlsxReader`: the first worksheet with an
+  Address column) in the documented `Import-VmsHardware` column set. Validation runs offline and online (recording
+  servers, installed drivers, storage names, device group paths, duplicate and existing addresses). It shows *"N rows
+  detected, X valid, Y invalid"* before anything runs. Each hardware unit is then added, its cameras configured, and
+  the `DeviceGroups` paths applied (`New-VmsDeviceGroup -Path`, which creates missing levels, piped to
+  `Add-VmsDeviceGroupMember -DeviceId`).
+* **MilestonePSTools workbooks.** A workbook with *Hardware* and *Cameras* worksheets (the layout written by
+  `Export-VmsHardware`) is not read by the application. It is handed to `Import-VmsHardware -LiteralPath`, which applies
+  all of its worksheets. The application previews the Hardware worksheet, flags rows MilestonePSTools will skip
+  (existing hardware without `-UpdateExisting`, addresses that are not absolute URIs) and requires strong confirmation
+  for updates. `Import-VmsHardware` has no `-WhatIf`, so no dry run is offered.
 * **Inventory pages** (Dashboard, System, Recording Servers, Hardware, Cameras & Devices, Storage, Users & Roles,
-  Rules & Events, Smart Client, Maintenance, Reports) are read-only views with filters and multi-select actions.
+  Rules & Events, Smart Client, Maintenance, Reports) list objects with filters and multi-select. Changes start from
+  the selected rows (dedicated workflows or quick actions).
+
+### Quick actions
+
+Guided changes that each map to one documented command are defined as data in `QuickActionCatalog` (Application). Each
+action names:
+* the command and, where needed, its parameter set;
+* the parameter that receives the selected objects (or one of their properties, for example member SIDs);
+* the few command parameters to show as inputs, with optional prefill from the selected object;
+* fixed values (for example `-Enabled $false` for *Disable rules*), and whether strong confirmation is required.
+
+`QuickActionService` builds the inputs with `CommandFormBuilder` from the **installed module's** catalog, so types,
+accepted values and secret handling come from MilestonePSTools metadata. An action is unavailable, with a reason, when
+the installed version lacks the command or a parameter. Prefilled values the user did not change are not sent.
+Objects already in the requested state are skipped. The plan goes through the normal review → *PowerShell -WhatIf*
+(only when the command supports ShouldProcess) → apply → audit flow. `CatalogDriftTests` checks every action against
+the catalog extracted from the MilestonePSTools repository.
+
+Actions currently defined:
+* **Hardware:** edit (name, description, address); update device credentials.
+* **Storage:** add a recording storage; remove storages.
+* **Roles:** new role; add members; remove members.
+* **Basic users:** new; enable; lock out; reset password; remove.
+* **Rules:** enable; disable; rename.
+* **View groups:** new; rename; remove.
 * **Command Explorer** lists every catalog command with documentation, risk, requirements and examples. In Expert Mode,
   AutoForm commands get a generated typed form (`CommandFormBuilder`): object pickers instead of GUIDs, dropdowns for
   accepted values, secure inputs for secrets. Forms become typed operations, never script text.

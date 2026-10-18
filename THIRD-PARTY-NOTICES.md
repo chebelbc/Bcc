@@ -19,6 +19,13 @@ third-party software it uses and how each piece is used.
 | Microsoft.NETFramework.ReferenceAssemblies.net48 | Compile .NET Framework 4.8 targets with the dotnet CLI | MIT (Microsoft) |
 | Microsoft.PowerShell.5.ReferenceAssemblies | Compile the worker engine against Windows PowerShell 5.1 APIs. Excluded from the output with `ExcludeAssets="runtime"`; the CI checks that `System.Management.Automation.dll` is not shipped. | Microsoft; see the package's license on nuget.org |
 
+## Installer
+
+The setup program (`XProtectAdminAssistant-Setup-<version>.exe`) is built with **Inno Setup 6** (Jordan Russell and
+Martijn Laan, https://jrsoftware.org). It contains Inno Setup's setup engine, distributed under the Inno Setup License.
+That license permits free use, including commercially; read it on jrsoftware.org. The portable zip does not contain
+Inno Setup.
+
 ## Tests only
 
 | Package | License |
@@ -26,6 +33,9 @@ third-party software it uses and how each piece is used.
 | Microsoft.PowerShell.SDK 7.4.6 (and its dependencies) | MIT (PowerShell) |
 | xunit 2.9.3, xunit.runner.visualstudio 2.8.2 | Apache License 2.0 |
 | Microsoft.NET.Test.Sdk 17.12.0 | MIT |
+
+The Excel test fixtures in `tests/Fixtures/xlsx` were generated once with openpyxl, XlsxWriter and LibreOffice. These
+tools are not dependencies of the application or of the tests.
 
 The license information above was taken from each project's published metadata as known at the time of writing.
 Check the package pages on nuget.org for the authoritative license of the exact version you use.

@@ -41,10 +41,21 @@ dotnet build XProtectAdminAssistant.sln -c Release
 ```
 
 The UI project builds the net48 x64 worker and copies it to `worker\` next to `XProtectAdminAssistant.exe`. The fallback
-catalog is copied to `catalog\`. To distribute the application, copy the whole `bin\Release\net48` folder; there is no
-installer yet. Sign `XProtectAdminAssistant.exe` and `worker\MilestoneAdmin.Worker.exe` with your organization's code
-signing certificate before distribution. Do not add `System.Management.Automation.dll` to the output: the worker must
+catalog is copied to `catalog\`. The whole `bin\Release\net48` folder is the application; the installer below packages
+it. Sign `XProtectAdminAssistant.exe` and `worker\MilestoneAdmin.Worker.exe` with your organization's code signing
+certificate before distribution (they are not signed by CI). Do not add `System.Management.Automation.dll` to the output: the worker must
 use the installed Windows PowerShell, and CI checks this.
+
+### Installer
+
+`installer/XProtectAdminAssistant.iss` is an [Inno Setup](https://jrsoftware.org/isinfo.php) 6 script. CI builds it
+on Windows after the solution build:
+
+```powershell
+& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /DAppVersion=0.1.0 /DSourceDir="$PWD\src\MilestoneAdmin.UI\bin\Release\net48" installer\XProtectAdminAssistant.iss
+```
+
+The installer and a portable zip are written to `artifacts\`. The version comes from `Directory.Build.props`.
 
 ## Build and test (Linux/macOS)
 
@@ -80,6 +91,20 @@ Classification lives in `catalog/classification-rules.json`. Change risk levels,
 object types there, never in code. Python (`tools/catalog/classification.py`) and C# (`CommandClassifier`) both read
 it, and `ClassifierParityTests` keeps them identical. `CatalogDriftTests` checks that the worker's `CommandPolicy` lists
 still match it.
+
+## Adding a quick action
+
+When a guided change is just one documented command with a few inputs, add it to
+`src/MilestoneAdmin.Application/Actions/QuickActionCatalog.cs` instead of writing a workflow. Each entry gives:
+* the command, plus the parameter set if needed;
+* the parameter that receives the selected objects;
+* the inputs to show (`QuickActionField`, optionally prefilled from a property of the selected object);
+* fixed values, warnings taken from the command documentation, and strong confirmation for destructive actions.
+
+The inventory page whose tab or object type matches `ObjectType` shows the action automatically. Then:
+1. Run the tests. `CatalogDriftTests` fail if the command, a parameter or a fixed value does not exist in MilestonePSTools.
+2. Add the command to `catalog/gui-support.json` and run `tools/catalog/generate_docs.py`.
+3. Add an end-to-end test to `tests/MilestoneAdmin.Tests/EndToEnd/FeatureEndToEndTests.cs` (mock commands use real names only).
 
 ## Adding a guided feature
 

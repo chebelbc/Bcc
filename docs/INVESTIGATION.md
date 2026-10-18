@@ -73,6 +73,24 @@ module used in tests; they have **not** yet been compared against a real install
 | G2 | "Replace Hardware" cannot be performed through the MIP SDK or MilestonePSTools. | `docs/commands/en-US/about_Get-VmsCameraReport.help.md` |
 | G3 | Device status and parts of `Get-VmsCameraReport` contact **recording servers directly**. The documented default port is 7563. | `about_Get-VmsCameraReport.help.md`, `Get-RecorderStatusService2.md`, `Get-RecorderConfig.md` |
 
+### Commands behind the guided write features
+
+Checked in the documentation and source at the same commit. The quick-action and onboarding code relies on these facts.
+
+| # | Finding | Evidence |
+|---|---|---|
+| W1 | `Import-VmsHardware` handles `.csv` itself and `.xlsx` through `Import-VmsHardwareExcel`, using the ImportExcel module (an installed copy, or the copy shipped inside MilestonePSTools). The Excel format is "too complex to describe" and is meant to be produced by `Export-VmsHardware`. | `Public/Import-VmsHardware.ps1`, `Import-VmsHardware.md` |
+| W2 | `Import-VmsHardwareExcel` requires a *Hardware* worksheet. It skips hardware that already exists on the recording server unless `-UpdateExisting` is given, and skips rows whose Address is not an absolute URI. `Import-VmsHardware` does not support `-WhatIf`. | `Private/ImportVmsHardwareExcelFunctions.ps1`; catalog |
+| W3 | `New-VmsDeviceGroup -Path` returns an existing group or creates the missing levels (camera groups by default). `Add-VmsDeviceGroupMember` takes `-Group` from the pipeline and devices by `-DeviceId`. `Add-VmsHardware` does not add devices to device groups. | `Public/New-VmsDeviceGroup.ps1`, `Public/Add-VmsDeviceGroupMember.ps1`, `Add-VmsHardware.md` |
+| W4 | `Set-VmsHardware -UpdateRemoteHardware` also changes the password on the device. It requires XProtect 23.2, driver support, and Milestone's password rules (up to 64 characters, at least one upper-case, one lower-case and one number, only a-z, A-Z, 0-9). `-Password` requires 11.3. | `Set-VmsHardware.md` |
+| W5 | `Remove-VmsStorage` removes a storage only if it is not the default and no device records to it, together with its archive storages. | `Remove-VmsStorage.md` |
+| W6 | `Remove-VmsViewGroup -Recurse` removes all child views and view groups. | `Remove-VmsViewGroup.md` |
+| W7 | `Add-VmsRoleMember -AccountName` resolves names without a domain on the management server's machine first, then in Active Directory. `Remove-VmsRoleMember` accepts members as `-User` objects or as `-Sid`. | `Add-VmsRoleMember.md`, catalog |
+| W8 | `Set-VmsRule` has `-Enabled` and `-Name`. `Set-VmsAlarmDefinition` has **no** Enabled parameter. | catalog |
+| W9 | `Set-VmsBasicUser -Status` accepts `Enabled` and `LockedOutByAdmin`. | catalog (ValidateSet) |
+| W10 | `[RequiresVmsVersion]` exposes `RequiredVersion` as a `VersionInterval` with `MinVersion` and `MaxVersion`. | `src/MilestonePSTools/Attributes.cs` |
+| W11 | `Get-VmsSite` returns the selected site, and `-ListAvailable` returns all sites. Most commands operate only on the selected site; `Select-VmsSite -Site` switches it. | `Get-VmsSite.md`, `Select-VmsSite.md` |
+
 ## Consequences for the design
 
 * F1–F5 lead to the separate worker process (ADR 0001).
@@ -84,6 +102,11 @@ module used in tests; they have **not** yet been compared against a real install
 * F13–F15 lead to the sensitive-output gate, secret scrubbing, the audit trail for secret reveals, and telemetry
   disabled by default for the application's worker.
 * G1 is shown in the UI as an explicit *not supported* capability.
+* W1/W2 lead to two Excel paths. A simple table in the documented column format is read and validated by the
+  application. A MilestonePSTools export workbook is passed to `Import-VmsHardware`, with the skip rules shown in the
+  preview and no claimed dry run.
+* W3 makes device-group assignment idempotent. W4–W9 supply the warnings and fixed values of the quick actions. W10 is
+  mirrored by the mock module.
 
 ## Open issues and uncertainties
 
@@ -101,5 +124,7 @@ module used in tests; they have **not** yet been compared against a real install
    warns about this and links the user to the XProtect documentation instead of making a claim.
 5. **Network ports** beyond those documented in MilestonePSTools (management server HTTP/HTTPS, recording server 7563)
    depend on the XProtect version and configuration. Use Milestone's official port documentation for your version.
-6. **Runtime versus static catalog differences** (aliases, dynamic parameters, parameter sets generated at run time)
+6. **Excel files saved by Microsoft Excel** have not been tested (the reader is tested with openpyxl, XlsxWriter and
+   LibreOffice output). Office Open XML is a standard format, but a file from Excel itself should be tried before relying on it.
+7. **Runtime versus static catalog differences** (aliases, dynamic parameters, parameter sets generated at run time)
    can only be found by running the runtime discovery on Windows.

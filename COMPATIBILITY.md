@@ -56,6 +56,24 @@ MilestonePSTools 25.2.61 ("-" = no version attribute).
 | Detailed camera report | `Get-VmsCameraReport` | - | - |
 | Configuration backup / restore | *none*: MilestonePSTools has no backup/restore command | n/a | n/a |
 
+Additional guided features (quick actions, onboarding and site selection). Version requirements are from the
+MilestonePSTools 25.2.61 command and parameter attributes:
+
+| Feature | Commands | Min XProtect |
+|---|---|---|
+| Edit hardware, update device credentials | `Set-VmsHardware` | -Password: 11.3; "also change on the device" (-UpdateRemoteHardware): 23.2 |
+| Add / remove recording storage | `Add-VmsStorage`, `Remove-VmsStorage` | - |
+| New role, add / remove members | `New-VmsRole`, `Add-VmsRoleMember`, `Get-VmsRoleMember`, `Remove-VmsRoleMember` | - |
+| Basic users | `New-VmsBasicUser`, `Set-VmsBasicUser`, `Remove-VmsBasicUser` | - |
+| Enable / disable / rename rules | `Set-VmsRule` | 20.1 |
+| View groups | `New-VmsViewGroup`, `Set-VmsViewGroup`, `Remove-VmsViewGroup` | 21.1 |
+| Device groups for new cameras | `New-VmsDeviceGroup`, `Add-VmsDeviceGroupMember` | - |
+| MilestonePSTools workbook import | `Import-VmsHardware` (for .xlsx, MilestonePSTools uses the ImportExcel module: an installed copy, or the copy shipped inside MilestonePSTools) | - |
+| Site selection | `Get-VmsSite`, `Select-VmsSite` | - |
+
+MilestonePSTools checks these version attributes itself when a command runs. A version error is translated into a
+plain-language message.
+
 Every other command is listed in [SUPPORTED_COMMANDS.md](SUPPORTED_COMMANDS.md) with its GUI support level and risk.
 
 ## Remote workstation deployment
@@ -92,9 +110,11 @@ Notes and uncertainties:
 
 ## Known gaps
 
-* **Federated Architecture site switching** (`Select-VmsSite`) is not implemented. The application works on the site
-  it connected to. The *Include child sites* connection option is passed to `Connect-Vms`, but there is no site picker yet.
 * **Configuration backup/restore** does not exist in MilestonePSTools.
-* **Device group assignment** of newly added hardware is not part of the guided workflows. `Add-VmsHardware` does not
-  add devices to device groups (its documentation says so explicitly). `Import-VmsHardware`, available from Command
-  Explorer in Expert Mode, supports a `DeviceGroups` column.
+* **Not guided:** role permissions, alarm definition changes (`Set-VmsAlarmDefinition` has no Enabled parameter),
+  Smart Client views and profiles, archive storages and retention changes. Use Command Explorer forms in Expert Mode
+  where the commands are suitable.
+* **Excel compatibility:** the application's .xlsx reader is tested with files written by openpyxl, XlsxWriter and
+  LibreOffice. Files saved by Microsoft Excel use the same Office Open XML format but have not been tested yet.
+* **Group paths** containing '/' inside a group name are rejected by onboarding validation rather than guessing
+  MilestonePSTools' escaping rules.

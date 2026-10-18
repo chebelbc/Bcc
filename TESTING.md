@@ -34,10 +34,12 @@ worker on Windows.
 |---|---|---|
 | Worker engine | `Engine/WorkerEngineTests.cs` | Structured output (never console text); allowlist and command-name validation; injection strings bound as literals; ScriptBlock, unknown or abbreviated parameters refused; state changes need approval; ConfirmImpact=High runs without prompting after approval; WhatIf captured as its own stream and changes nothing; WhatIf refused without ShouldProcess; no auto-connect; interactive commands refused; secret scrubbing and redaction; sensitive-output gate; handles and Id re-resolution; per-object non-terminating errors; streaming; cancellation; timeouts; runtime discovery; environment probe |
 | End to end | `EndToEnd/EndToEndTests.cs` | Real worker process plus application services: connect and catalog discovery, error translation (wrong password, unreachable server), bulk camera change with review/preview/apply/audit, partial failures with retry, the Add Hardware workflow, hardware removal with strong confirmation and WhatIf, CSV onboarding, reports, password reveal audited without the value, worker crash handling |
-| Catalog drift | `Domain/CatalogDriftTests.cs` | Every command and parameter used by `PsCommands`, every object producer, and every mock function and parameter exists in the catalog; worker policy lists equal the rules file; `gui-support.json` covers every command the app builds |
+| Catalog drift | `Domain/CatalogDriftTests.cs` | Every command and parameter used by `PsCommands` and by every quick action (including fixed values against accepted values), every object producer, and every mock function and parameter exists in the catalog; worker policy lists equal the rules file; `gui-support.json` covers every command the app builds |
 | Classifier parity | `Domain/ClassifierParityTests.cs` | The C# classifier gives the same risk, category, suitability, controls, secret flags and dependencies as the Python classifier for all 292 commands |
 | Domain units | `Domain/DomainUnitTests.cs` | JSON parser and writer (escapes, depth limit, malformed input); CSV (quoting, BOM, line numbers, formula-injection escaping); hardware CSV validation ("N rows detected, X valid, Y invalid", masking, online checks, address rules); PowerShell literal quoting, **parsed back with the PowerShell parser**; script generation without secrets; version rules; diffs |
 | Application units | `ApplicationUnitTests.cs` | Error translation by exception type; address ranges and naming patterns; Command Explorer forms produce typed parameters (injection text stays a literal; secrets stay out of pipeline and redacted JSON); blocked suitability levels; audit hash chain detects edits, deletions and corrupt lines |
+| Excel | `Domain/XlsxTests.cs` | Reads workbooks produced by openpyxl, XlsxWriter and LibreOffice (fixtures in `tests/Fixtures/xlsx`) into the same table: shared and inline strings, rich text, numbers, booleans, blank rows, real row numbers; detects MilestonePSTools export workbooks; rejects DTDs/XXE, non-workbooks, values without a header, duplicate headers; writer output round-trips and stores formulas as text |
+| Feature end to end | `EndToEnd/FeatureEndToEndTests.cs` | Excel onboarding with device groups; MilestonePSTools workbook import (and the skip-existing rule); site switching; hardware edit (only changed values sent) and credential update without leaking the password; storage add/remove including the documented refusal for the default storage; role members (partial failure reported, SID-based removal with a reproducible script); basic users; rules (already-disabled rules skipped); view groups (`-Recurse` rule) |
 | Discovery script | `Domain/DiscoveryScriptTests.cs` | `tools/discovery/Export-PSToolsCatalog.ps1` runs against the mock module, and its output loads into the application's catalog with correct classification |
 | Catalog tooling | `tools/catalog/test_catalog_tools.py` | Extractor on a synthetic repository fixture (platyPS, PowerShell and C# parsing, inheritance, deprecations, discrepancies); classification rules; committed catalog consistency; generated docs up to date |
 
@@ -55,6 +57,9 @@ Rules for changing it:
 
 * Add only commands and parameters that exist in the real module. `CatalogDriftTests` enforce this.
 * Copy behaviour from the real module's source or documentation, and say where it came from in a comment.
+* Requirement attributes must have the real shape. `RequiresVmsVersion` exposes `RequiredVersion` as a
+  `VersionInterval`, as in `src/MilestonePSTools/Attributes.cs`; giving the mock the wrong shape once hid a
+  discovery-script code path.
 * `Invoke-MockScriptBlockProbe` is the one deliberate exception. It exists only to prove that ScriptBlock parameters are refused.
 
 ## Manual testing on Windows
@@ -71,11 +76,13 @@ Before a release:
    `tools/discovery/Export-PSToolsCatalog.ps1 -OutputPath runtime.json -DisableTelemetry`. Classify it with
    `python3 tools/catalog/classify_catalog.py runtime.json runtime-classified.json` and compare it with
    `catalog/milestonepstools-catalog.json`. Investigate every difference.
-2. Start the application, run the setup wizard, and connect to a **dedicated test XProtect system**. A Milestone demo
+2. Open a hardware onboarding template, fill it in **with Microsoft Excel**, save it, and import it. The Excel reader is
+   tested only with other producers so far.
+3. Start the application, run the setup wizard, and connect to a **dedicated test XProtect system**. A Milestone demo
    or lab installation that you own is suitable.
-3. Exercise the read-only pages first. Then try each change workflow with **PowerShell -WhatIf** first, then apply it
+4. Exercise the read-only pages first. Then try each change workflow with **PowerShell -WhatIf** first, then apply it
    on test objects only.
-4. Check the audit log (Verify), and confirm that no secrets appear in:
+5. Check the audit log (Verify), and confirm that no secrets appear in:
    * `%APPDATA%\XProtectAdminAssistant`;
    * `%LOCALAPPDATA%\XProtectAdminAssistant`;
    * exported scripts and reports.
