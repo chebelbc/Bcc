@@ -13,5 +13,10 @@
     <ProjectReference Include="..\..\src\MilestoneAdmin.Protocol\MilestoneAdmin.Protocol.csproj" />
     <ProjectReference Include="..\..\src\MilestoneAdmin.Domain\MilestoneAdmin.Domain.csproj" />
     <ProjectReference Include="..\..\src\MilestoneAdmin.Worker.Engine\MilestoneAdmin.Worker.Engine.csproj" />
+    <ProjectReference Include="..\..\src\MilestoneAdmin.PSTools\MilestoneAdmin.PSTools.csproj" />
+    <ProjectReference Include="..\..\src\MilestoneAdmin.Application\MilestoneAdmin.Application.csproj" />
+    <ProjectReference Include="..\..\src\MilestoneAdmin.Infrastructure\MilestoneAdmin.Infrastructure.csproj" />
+    <!-- Built so end-to-end tests can start the real worker process (net8.0 test build). -->
+    <ProjectReference Include="..\..\src\MilestoneAdmin.Worker\MilestoneAdmin.Worker.csproj" ReferenceOutputAssembly="false" SetTargetFramework="TargetFramework=net8.0" />
   </ItemGroup>
 </Project>

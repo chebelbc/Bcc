@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- GUI-side MilestonePSTools integration: worker process client, typed command builders, DTO mapping, gateway. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>MilestoneAdmin.PSTools</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MilestoneAdmin.Domain\MilestoneAdmin.Domain.csproj" />
+    <ProjectReference Include="..\MilestoneAdmin.Protocol\MilestoneAdmin.Protocol.csproj" />
+  </ItemGroup>
+</Project>

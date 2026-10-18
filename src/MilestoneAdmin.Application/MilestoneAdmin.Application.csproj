@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Application services and guided workflows. No UI and no PowerShell types. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>MilestoneAdmin.Application</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MilestoneAdmin.PSTools\MilestoneAdmin.PSTools.csproj" />
+    <ProjectReference Include="..\MilestoneAdmin.Domain\MilestoneAdmin.Domain.csproj" />
+  </ItemGroup>
+</Project>

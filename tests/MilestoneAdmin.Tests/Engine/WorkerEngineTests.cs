@@ -293,16 +293,17 @@ namespace MilestoneAdmin.Tests.Engine
         }
 
         [Fact]
-        public void Long_running_command_can_be_cancelled()
+        public async Task Long_running_command_can_be_cancelled()
         {
             using var h = new EngineHarness();
             var req = new InvokeRequest { Id = "long" };
             req.Pipeline.Add(new PipelineStep("Wait-VmsTask").With("Path", ParameterValue.StringList(new[] { "Task[1]" })));
             var task = Task.Run(() => h.Invoke(req));
-            Thread.Sleep(1500);
+            await Task.Delay(1500);
             h.Engine.Cancel("long");
-            Assert.True(task.Wait(TimeSpan.FromSeconds(20)), "Cancellation did not stop the pipeline");
-            var r = task.Result;
+            var finished = await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(20)));
+            Assert.True(finished == task, "Cancellation did not stop the pipeline");
+            var r = await task;
             Assert.False(r.Success);
             Assert.True(r.Result.GetBool("cancelled"));
             Assert.False(r.Result.GetBool("timedOut"));

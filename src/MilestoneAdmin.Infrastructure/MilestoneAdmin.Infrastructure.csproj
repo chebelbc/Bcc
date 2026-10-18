@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- File stores (no secrets), audit log, catalog cache, Windows Credential Manager, worker process factory. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>MilestoneAdmin.Infrastructure</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MilestoneAdmin.Application\MilestoneAdmin.Application.csproj" />
+  </ItemGroup>
+</Project>

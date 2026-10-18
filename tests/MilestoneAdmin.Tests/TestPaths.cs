@@ -24,3 +24,24 @@ namespace MilestoneAdmin.Tests
         public static string MockModule => Path.Combine(RepoRoot, "tests", "MockModules", "MilestonePSTools", "MilestonePSTools.psd1");
     }
 }
+
+namespace MilestoneAdmin.Tests
+{
+    internal static class WorkerPaths
+    {
+        /// <summary>The net8.0 test build of the worker, started with "dotnet" (production uses the net48 x64 exe).</summary>
+        public static string WorkerDll
+        {
+            get
+            {
+                foreach (var cfg in new[] { "Debug", "Release" })
+                {
+                    var p = System.IO.Path.Combine(TestPaths.RepoRoot, "src", "MilestoneAdmin.Worker", "bin", cfg, "net8.0", "MilestoneAdmin.Worker.dll");
+                    if (System.IO.File.Exists(p)) return p;
+                }
+
+                throw new System.InvalidOperationException("Worker test build not found; build src/MilestoneAdmin.Worker for net8.0.");
+            }
+        }
+    }
+}
