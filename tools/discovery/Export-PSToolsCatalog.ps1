@@ -206,14 +206,17 @@ if ($DisableTelemetry) { $env:VMS_ApplicationInsights__Enabled = 'false' }
 
 $importArgs = @{ Name = $ModuleName; PassThru = $true; ErrorAction = 'Stop' }
 if ($RequiredVersion) { $importArgs.RequiredVersion = $RequiredVersion }
-$module = Import-Module @importArgs | Select-Object -First 1
+# Import-Module -PassThru can also return nested modules and ScriptsToProcess scripts; pick the module itself.
+$expectedName = if ($ModuleName -match '[\\/]|\.psd1$') { [IO.Path]::GetFileNameWithoutExtension($ModuleName) } else { $ModuleName }
+$module = Import-Module @importArgs | Where-Object Name -EQ $expectedName | Select-Object -First 1
+if (-not $module) { throw "Import-Module did not return the module '$expectedName'." }
 
 $deprecations = @{}
 $deprecationsPath = Join-Path $module.ModuleBase 'deprecations.psd1'
 if (Test-Path $deprecationsPath) { $deprecations = Import-PowerShellDataFile -Path $deprecationsPath }
 
 $aliasesByCommand = @{}
-Get-Command -Module $ModuleName -CommandType Alias | ForEach-Object {
+Get-Command -Module $module.Name -CommandType Alias | ForEach-Object {
     $target = $_.ResolvedCommandName
     if (-not $target) { return }
     if (-not $aliasesByCommand.ContainsKey($target)) { $aliasesByCommand[$target] = New-Object System.Collections.Generic.List[string] }
@@ -222,7 +225,7 @@ Get-Command -Module $ModuleName -CommandType Alias | ForEach-Object {
 
 # ---------------------------------------------------------------- commands
 $commands = New-Object System.Collections.Generic.List[object]
-$all = @(Get-Command -Module $ModuleName -CommandType Cmdlet, Function | Sort-Object Name)
+$all = @(Get-Command -Module $module.Name -CommandType Cmdlet, Function | Sort-Object Name)
 $i = 0
 foreach ($cmd in $all) {
     $i++
@@ -330,8 +333,8 @@ $catalog = [ordered]@{
         osVersion             = [Environment]::OSVersion.VersionString
         is64BitProcess        = [Environment]::Is64BitProcess
         psVersion             = $PSVersionTable.PSVersion.ToString()
-        psEdition             = [string]$PSVersionTable.PSEdition
-        clrVersion            = [string]$PSVersionTable.CLRVersion
+        psEdition             = if ($PSVersionTable.ContainsKey('PSEdition')) { [string]$PSVersionTable['PSEdition'] } else { 'Desktop' }
+        clrVersion            = if ($PSVersionTable.ContainsKey('CLRVersion')) { [string]$PSVersionTable['CLRVersion'] } else { [Environment]::Version.ToString() }
         netFrameworkRelease   = $ndpRelease
         languageMode          = [string]$ExecutionContext.SessionState.LanguageMode
         executionPolicy       = [string](Get-ExecutionPolicy)

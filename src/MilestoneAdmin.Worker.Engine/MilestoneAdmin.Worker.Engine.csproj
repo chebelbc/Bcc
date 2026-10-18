@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    PowerShell hosting engine of the worker.
+      net48  : production build, hosts Windows PowerShell 5.1 (System.Management.Automation from the GAC; the
+               reference-assembly package is compile-time only and is not redistributed).
+      net8.0 : test build only, hosts PowerShell 7.4 via Microsoft.PowerShell.SDK so the engine can be exercised
+               against a mock module on any OS. MilestonePSTools itself never runs on this target.
+    No other third-party dependencies (see docs/adr/0001-process-architecture.md).
+  -->
+  <PropertyGroup>
+    <TargetFrameworks>net48;net8.0</TargetFrameworks>
+    <RootNamespace>MilestoneAdmin.Worker.Engine</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MilestoneAdmin.Protocol\MilestoneAdmin.Protocol.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <PackageReference Include="Microsoft.PowerShell.5.ReferenceAssemblies" Version="1.1.0" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.6" />
+  </ItemGroup>
+</Project>

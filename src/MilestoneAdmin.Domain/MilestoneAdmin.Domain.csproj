@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>MilestoneAdmin.Domain</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MilestoneAdmin.Protocol\MilestoneAdmin.Protocol.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Single source of truth shared with tools/catalog/classification.py -->
+    <EmbeddedResource Include="..\..\catalog\classification-rules.json" LogicalName="MilestoneAdmin.Domain.classification-rules.json" Link="classification-rules.json" />
+  </ItemGroup>
+</Project>

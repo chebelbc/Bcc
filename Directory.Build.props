@@ -1,0 +1,20 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <Deterministic>true</Deterministic>
+    <Company>XProtect Admin Assistant contributors</Company>
+    <Product>XProtect Admin Assistant</Product>
+    <Copyright>Copyright (c) XProtect Admin Assistant contributors. Licensed under the Apache License 2.0.</Copyright>
+    <Version>0.1.0</Version>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+  <!-- Allows building .NET Framework targets with the dotnet CLI on any OS (reference assemblies only). -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

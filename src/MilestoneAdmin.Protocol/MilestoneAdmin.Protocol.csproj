@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Zero third-party dependencies by design: this assembly is loaded into the PowerShell worker process
+       next to MilestonePSTools and the MIP SDK (see docs/adr/0001-process-architecture.md). -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>MilestoneAdmin.Protocol</RootNamespace>
+  </PropertyGroup>
+</Project>
