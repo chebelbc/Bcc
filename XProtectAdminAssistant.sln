@@ -1,0 +1,85 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{99C39991-F508-4F80-8978-CBE76488E01A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilestoneAdmin.Application", "src\MilestoneAdmin.Application\MilestoneAdmin.Application.csproj", "{C89487C8-EEEB-4525-AAC0-1D87426736A9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilestoneAdmin.Domain", "src\MilestoneAdmin.Domain\MilestoneAdmin.Domain.csproj", "{6AC1954D-1FC6-47BA-8D84-C624DECFA127}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilestoneAdmin.Infrastructure", "src\MilestoneAdmin.Infrastructure\MilestoneAdmin.Infrastructure.csproj", "{07D10AD0-3440-473A-984A-3BA02DCF0856}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilestoneAdmin.PSTools", "src\MilestoneAdmin.PSTools\MilestoneAdmin.PSTools.csproj", "{8C0AD79D-D48C-45FA-AF25-6016B9E46D5E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilestoneAdmin.Protocol", "src\MilestoneAdmin.Protocol\MilestoneAdmin.Protocol.csproj", "{43705E99-1501-444F-A869-F7123190E47B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilestoneAdmin.Worker.Engine", "src\MilestoneAdmin.Worker.Engine\MilestoneAdmin.Worker.Engine.csproj", "{0EE76159-61DD-4397-B3C8-FFB41EAF2195}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilestoneAdmin.Worker", "src\MilestoneAdmin.Worker\MilestoneAdmin.Worker.csproj", "{F2A48E61-A651-4C74-A311-C23E0DEC8E8E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilestoneAdmin.UI", "src\MilestoneAdmin.UI\MilestoneAdmin.UI.csproj", "{EDEE8011-75F7-42FB-8520-2EB2E16CD941}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{D61AF6CA-BAA7-4368-A0A8-F4AE068A39DC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MilestoneAdmin.Tests", "tests\MilestoneAdmin.Tests\MilestoneAdmin.Tests.csproj", "{C03FBBC3-4DE4-448F-85B7-1B5CE43C5F03}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C89487C8-EEEB-4525-AAC0-1D87426736A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C89487C8-EEEB-4525-AAC0-1D87426736A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C89487C8-EEEB-4525-AAC0-1D87426736A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C89487C8-EEEB-4525-AAC0-1D87426736A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6AC1954D-1FC6-47BA-8D84-C624DECFA127}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6AC1954D-1FC6-47BA-8D84-C624DECFA127}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6AC1954D-1FC6-47BA-8D84-C624DECFA127}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6AC1954D-1FC6-47BA-8D84-C624DECFA127}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07D10AD0-3440-473A-984A-3BA02DCF0856}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07D10AD0-3440-473A-984A-3BA02DCF0856}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07D10AD0-3440-473A-984A-3BA02DCF0856}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07D10AD0-3440-473A-984A-3BA02DCF0856}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C0AD79D-D48C-45FA-AF25-6016B9E46D5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C0AD79D-D48C-45FA-AF25-6016B9E46D5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C0AD79D-D48C-45FA-AF25-6016B9E46D5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C0AD79D-D48C-45FA-AF25-6016B9E46D5E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43705E99-1501-444F-A869-F7123190E47B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43705E99-1501-444F-A869-F7123190E47B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43705E99-1501-444F-A869-F7123190E47B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43705E99-1501-444F-A869-F7123190E47B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0EE76159-61DD-4397-B3C8-FFB41EAF2195}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0EE76159-61DD-4397-B3C8-FFB41EAF2195}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0EE76159-61DD-4397-B3C8-FFB41EAF2195}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0EE76159-61DD-4397-B3C8-FFB41EAF2195}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F2A48E61-A651-4C74-A311-C23E0DEC8E8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2A48E61-A651-4C74-A311-C23E0DEC8E8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2A48E61-A651-4C74-A311-C23E0DEC8E8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2A48E61-A651-4C74-A311-C23E0DEC8E8E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C03FBBC3-4DE4-448F-85B7-1B5CE43C5F03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C03FBBC3-4DE4-448F-85B7-1B5CE43C5F03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C03FBBC3-4DE4-448F-85B7-1B5CE43C5F03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C03FBBC3-4DE4-448F-85B7-1B5CE43C5F03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EDEE8011-75F7-42FB-8520-2EB2E16CD941}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EDEE8011-75F7-42FB-8520-2EB2E16CD941}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EDEE8011-75F7-42FB-8520-2EB2E16CD941}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EDEE8011-75F7-42FB-8520-2EB2E16CD941}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{EDEE8011-75F7-42FB-8520-2EB2E16CD941} = {99C39991-F508-4F80-8978-CBE76488E01A}
+		{C89487C8-EEEB-4525-AAC0-1D87426736A9} = {99C39991-F508-4F80-8978-CBE76488E01A}
+		{6AC1954D-1FC6-47BA-8D84-C624DECFA127} = {99C39991-F508-4F80-8978-CBE76488E01A}
+		{07D10AD0-3440-473A-984A-3BA02DCF0856} = {99C39991-F508-4F80-8978-CBE76488E01A}
+		{8C0AD79D-D48C-45FA-AF25-6016B9E46D5E} = {99C39991-F508-4F80-8978-CBE76488E01A}
+		{43705E99-1501-444F-A869-F7123190E47B} = {99C39991-F508-4F80-8978-CBE76488E01A}
+		{0EE76159-61DD-4397-B3C8-FFB41EAF2195} = {99C39991-F508-4F80-8978-CBE76488E01A}
+		{F2A48E61-A651-4C74-A311-C23E0DEC8E8E} = {99C39991-F508-4F80-8978-CBE76488E01A}
+		{C03FBBC3-4DE4-448F-85B7-1B5CE43C5F03} = {D61AF6CA-BAA7-4368-A0A8-F4AE068A39DC}
+	EndGlobalSection
+EndGlobal

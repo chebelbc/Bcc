@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    XProtect Admin Assistant - WPF on .NET Framework 4.8 (build on Windows with Visual Studio 2022 or the .NET SDK).
+    The GUI never loads System.Management.Automation or the MIP SDK; MilestonePSTools runs in the worker process
+    (MilestoneAdmin.Worker, net48 x64), which is copied to the "worker" subfolder of the output.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>XProtectAdminAssistant</AssemblyName>
+    <RootNamespace>MilestoneAdmin.UI</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MilestoneAdmin.Protocol\MilestoneAdmin.Protocol.csproj" />
+    <ProjectReference Include="..\MilestoneAdmin.Domain\MilestoneAdmin.Domain.csproj" />
+    <ProjectReference Include="..\MilestoneAdmin.PSTools\MilestoneAdmin.PSTools.csproj" />
+    <ProjectReference Include="..\MilestoneAdmin.Application\MilestoneAdmin.Application.csproj" />
+    <ProjectReference Include="..\MilestoneAdmin.Infrastructure\MilestoneAdmin.Infrastructure.csproj" />
+    <!-- Build order only; the worker is copied below, not referenced. -->
+    <ProjectReference Include="..\MilestoneAdmin.Worker\MilestoneAdmin.Worker.csproj" ReferenceOutputAssembly="false" SetTargetFramework="TargetFramework=net48" Private="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Fallback catalog (used for Command Explorer before/without runtime discovery). -->
+    <Content Include="..\..\catalog\milestonepstools-catalog.json" Link="catalog\milestonepstools-catalog.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\LICENSE')" />
+    <Content Include="..\..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\THIRD-PARTY-NOTICES.md')" />
+  </ItemGroup>
+  <Target Name="CopyWorker" AfterTargets="Build">
+    <ItemGroup>
+      <WorkerFiles Include="..\MilestoneAdmin.Worker\bin\$(Configuration)\net48\*.dll;..\MilestoneAdmin.Worker\bin\$(Configuration)\net48\*.exe;..\MilestoneAdmin.Worker\bin\$(Configuration)\net48\*.config" />
+    </ItemGroup>
+    <Copy SourceFiles="@(WorkerFiles)" DestinationFolder="$(OutDir)worker" SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="PublishWorker" AfterTargets="Publish">
+    <ItemGroup>
+      <PublishWorkerFiles Include="$(OutDir)worker\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PublishWorkerFiles)" DestinationFolder="$(PublishDir)worker" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

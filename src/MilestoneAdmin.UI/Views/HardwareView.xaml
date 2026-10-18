@@ -1,0 +1,48 @@
+<UserControl x:Class="MilestoneAdmin.UI.Views.HardwareView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MilestoneAdmin.UI.ViewModels"
+             xmlns:v="clr-namespace:MilestoneAdmin.UI.Views"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:HardwareViewModel, IsDesignTimeCreatable=False}">
+    <Grid>
+        <DockPanel Margin="24,20">
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock Text="Hardware" Style="{StaticResource Text.PageTitle}" />
+                <TextBlock Text="{Binding Summary}" Style="{StaticResource Text.Muted}" />
+                <WrapPanel Margin="0,8,0,8">
+                    <Button Content="Add hardware..." Command="{Binding AddCommand}" Style="{StaticResource Button.Primary}" />
+                    <Button Content="Bulk onboarding from CSV..." Command="{Binding CsvCommand}" />
+                    <Button Content="Enable" Command="{Binding EnableCommand}" />
+                    <Button Content="Disable" Command="{Binding DisableCommand}" />
+                    <Button Content="Remove..." Command="{Binding RemoveCommand}" Style="{StaticResource Button.Danger}" />
+                    <Button Content="Reveal password..." Command="{Binding RevealPasswordCommand}" Visibility="{Binding ExpertMode, Converter={StaticResource BoolToVis}}" />
+                    <Button Content="Export CSV" Command="{Binding ExportCommand}" />
+                    <Button Content="Refresh" Command="{Binding RefreshCommand}" />
+                </WrapPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBox Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged, Delay=200}" Width="300" ToolTip="Filter by name, address or model" />
+                    <ComboBox ItemsSource="{Binding Recorders}" SelectedItem="{Binding RecorderFilter}" Width="240" Margin="8,0,0,0" />
+                </StackPanel>
+            </StackPanel>
+            <DataGrid x:Name="ItemsGrid" ItemsSource="{Binding View}" SelectionChanged="OnSelectionChanged">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" />
+                    <DataGridTextColumn Header="Address" Binding="{Binding Address}" Width="2*" />
+                    <DataGridTextColumn Header="Model" Binding="{Binding Model}" Width="2*" />
+                    <DataGridTextColumn Header="Enabled" Binding="{Binding Enabled, Converter={StaticResource YesNo}}" Width="Auto" />
+                    <DataGridTextColumn Header="Recording server" Binding="{Binding RecordingServerName}" Width="*" />
+                    <DataGridTextColumn Header="Cameras" Binding="{Binding CameraCount}" Width="Auto" />
+                    <DataGridTextColumn Header="User name" Binding="{Binding UserName}" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+        <v:ErrorBanner VerticalAlignment="Top" />
+        <v:BusyOverlay />
+        <Grid Visibility="{Binding Review, Converter={StaticResource NullToVis}}" Background="{StaticResource Brush.Overlay}">
+            <v:ReviewPanel DataContext="{Binding Review}" Margin="48,32" />
+        </Grid>
+    </Grid>
+</UserControl>

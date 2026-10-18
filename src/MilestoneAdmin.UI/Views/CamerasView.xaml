@@ -1,0 +1,90 @@
+<UserControl x:Class="MilestoneAdmin.UI.Views.CamerasView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MilestoneAdmin.UI.ViewModels"
+             xmlns:v="clr-namespace:MilestoneAdmin.UI.Views"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:CamerasViewModel, IsDesignTimeCreatable=False}">
+    <Grid>
+        <DockPanel Margin="24,20">
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock Text="Cameras &amp; Devices" Style="{StaticResource Text.PageTitle}" />
+                <TextBlock Text="{Binding Summary}" Style="{StaticResource Text.Muted}" />
+                <WrapPanel Margin="0,8,0,8">
+                    <Button Content="Enable" Command="{Binding EnableCommand}" />
+                    <Button Content="Disable" Command="{Binding DisableCommand}" />
+                    <Button Content="Rename..." Command="{Binding RenameCommand}" />
+                    <Button Content="Rename from CSV..." Command="{Binding RenameCsvCommand}" />
+                    <Button Content="Recording settings..." Command="{Binding RecordingCommand}" />
+                    <Button Content="Move to storage..." Command="{Binding StorageCommand}" />
+                    <Button Content="Export CSV" Command="{Binding ExportCommand}" />
+                    <Button Content="Refresh" Command="{Binding RefreshCommand}" />
+                </WrapPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBox Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged, Delay=200}" Width="300" ToolTip="Filter by camera, hardware name or address" />
+                    <ComboBox ItemsSource="{Binding Recorders}" SelectedItem="{Binding RecorderFilter}" Width="240" Margin="8,0,0,0" />
+                    <ComboBox ItemsSource="{Binding StateFilters}" SelectedItem="{Binding StateFilter}" Width="120" Margin="8,0,0,0" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Edit options panel -->
+            <Border DockPanel.Dock="Right" Width="360" Style="{StaticResource Card}" Margin="12,0,0,0" Visibility="{Binding EditorOpen, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding EditorTitle}" Style="{StaticResource Text.Section}" />
+                    <StackPanel Visibility="{Binding IsRenamePattern, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Name pattern" Style="{StaticResource Text.Label}" />
+                        <TextBox Text="{Binding NamePattern, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Text="Tokens: {Name} {Hardware} {Address} {RecordingServer} {Channel} {Channel1} {Index} {Index:000}" Style="{StaticResource Text.Muted}" />
+                        <TextBlock Text="{Binding PatternExample}" FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Visibility="{Binding IsRenameCsv, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="CSV with columns NewName and Id (or Name = current name)." Style="{StaticResource Text.Muted}" />
+                        <DockPanel Margin="0,6,0,0">
+                            <Button DockPanel.Dock="Right" Content="Browse..." Command="{Binding BrowseCsvCommand}" Margin="8,0,0,0" />
+                            <TextBox Text="{Binding RenameCsvPath}" IsReadOnly="True" />
+                        </DockPanel>
+                    </StackPanel>
+                    <StackPanel Visibility="{Binding IsRecording, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Leave a field empty / indeterminate to keep the current value." Style="{StaticResource Text.Muted}" />
+                        <CheckBox Content="Recording enabled" IsChecked="{Binding RecordingEnabled}" IsThreeState="True" />
+                        <TextBlock Text="Recording frame rate (fps)" Style="{StaticResource Text.Label}" />
+                        <TextBox Text="{Binding Framerate, UpdateSourceTrigger=PropertyChanged}" />
+                        <CheckBox Content="Pre-buffer enabled" IsChecked="{Binding PrebufferEnabled}" IsThreeState="True" Margin="0,8,0,0" />
+                        <TextBlock Text="Pre-buffer (seconds)" Style="{StaticResource Text.Label}" />
+                        <TextBox Text="{Binding PrebufferSeconds, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+                    <StackPanel Visibility="{Binding IsStorage, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Target storage (must exist on the recording servers of all selected cameras)" Style="{StaticResource Text.Label}" TextWrapping="Wrap" />
+                        <ComboBox ItemsSource="{Binding StorageNames}" SelectedItem="{Binding StorageName}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding EditorMessage}" Foreground="{StaticResource Brush.Warning}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <Button Content="Review changes..." Command="{Binding ContinueCommand}" Style="{StaticResource Button.Primary}" />
+                        <Button Content="Close" Command="{Binding CloseEditorCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <DataGrid x:Name="ItemsGrid" ItemsSource="{Binding View}" SelectionChanged="OnSelectionChanged">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" />
+                    <DataGridTextColumn Header="Enabled" Binding="{Binding Enabled, Converter={StaticResource YesNo}}" Width="Auto" />
+                    <DataGridTextColumn Header="Ch." Binding="{Binding Channel}" Width="Auto" />
+                    <DataGridTextColumn Header="Hardware" Binding="{Binding HardwareName}" Width="2*" />
+                    <DataGridTextColumn Header="Address" Binding="{Binding HardwareAddress}" Width="*" />
+                    <DataGridTextColumn Header="Recording server" Binding="{Binding RecordingServerName}" Width="*" />
+                    <DataGridTextColumn Header="Recording" Binding="{Binding RecordingEnabled, Converter={StaticResource YesNo}}" Width="Auto" />
+                    <DataGridTextColumn Header="FPS" Binding="{Binding RecordingFramerate}" Width="Auto" />
+                    <DataGridTextColumn Header="Storage" Binding="{Binding RecordingStorageName}" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+        <v:ErrorBanner VerticalAlignment="Top" />
+        <v:BusyOverlay />
+        <Grid Visibility="{Binding Review, Converter={StaticResource NullToVis}}" Background="{StaticResource Brush.Overlay}">
+            <v:ReviewPanel DataContext="{Binding Review}" Margin="48,32" />
+        </Grid>
+    </Grid>
+</UserControl>

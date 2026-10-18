@@ -1,0 +1,51 @@
+<UserControl x:Class="MilestoneAdmin.UI.Views.RecordingServersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MilestoneAdmin.UI.ViewModels"
+             xmlns:v="clr-namespace:MilestoneAdmin.UI.Views"
+             xmlns:svc="clr-namespace:MilestoneAdmin.Application.Services;assembly=MilestoneAdmin.Application"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:RecordingServersViewModel, IsDesignTimeCreatable=False}">
+    <Grid>
+        <DockPanel Margin="24,20">
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock Text="Recording Servers" Style="{StaticResource Text.PageTitle}" />
+                <StackPanel Orientation="Horizontal" Margin="0,4,0,12">
+                    <Button Content="Refresh" Command="{Binding RefreshCommand}" />
+                    <Button Content="Check connectivity" Command="{Binding CheckCommand}" ToolTip="TCP check from this workstation to the recording server web server port" />
+                    <Button Content="Add hardware to this server..." Command="{Binding AddHardwareCommand}" Style="{StaticResource Button.Primary}" />
+                </StackPanel>
+            </StackPanel>
+            <DataGrid DockPanel.Dock="Bottom" ItemsSource="{Binding Checks}" MaxHeight="220" Margin="0,12,0,0">
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="" Width="30">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate DataType="{x:Type svc:PrecheckItem}">
+                                <TextBlock Text="{Binding Symbol}" Foreground="{Binding Status, Converter={StaticResource StatusBrush}}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Check" Binding="{Binding Title}" Width="2*" />
+                    <DataGridTextColumn Header="Result" Binding="{Binding Detail}" Width="3*" />
+                    <DataGridTextColumn Header="What to do" Binding="{Binding Remedy}" Width="3*" />
+                </DataGrid.Columns>
+            </DataGrid>
+            <DataGrid ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}" SelectionMode="Single">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" />
+                    <DataGridTextColumn Header="Host name" Binding="{Binding HostName}" Width="2*" />
+                    <DataGridTextColumn Header="Web server" Binding="{Binding WebServerUri}" Width="2*" />
+                    <DataGridTextColumn Header="Enabled" Binding="{Binding Enabled, Converter={StaticResource YesNo}}" Width="Auto" />
+                    <DataGridTextColumn Header="Hardware" Binding="{Binding HardwareCount}" Width="Auto" />
+                    <DataGridTextColumn Header="Cameras" Binding="{Binding CameraCount}" Width="Auto" />
+                    <DataGridTextColumn Header="Disabled cameras" Binding="{Binding DisabledCameraCount}" Width="Auto" />
+                    <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="2*" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+        <v:ErrorBanner VerticalAlignment="Top" />
+        <v:BusyOverlay />
+    </Grid>
+</UserControl>

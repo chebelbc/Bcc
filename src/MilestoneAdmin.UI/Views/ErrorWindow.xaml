@@ -1,0 +1,64 @@
+<Window x:Class="MilestoneAdmin.UI.Views.ErrorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:err="clr-namespace:MilestoneAdmin.Domain.Errors;assembly=MilestoneAdmin.Domain"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=err:AdminError, IsDesignTimeCreatable=False}"
+        Title="Operation failed" Width="720" Height="560" WindowStartupLocation="CenterOwner"
+        Background="{StaticResource Brush.Background}" ShowInTaskbar="False">
+    <DockPanel Margin="20">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Copy details" Click="OnCopy" />
+            <Button Content="Close" IsDefault="True" IsCancel="True" Click="OnClose" Style="{StaticResource Button.Primary}" Margin="0" />
+        </StackPanel>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="{Binding Summary}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="{StaticResource Brush.Danger}" />
+                <Grid Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Operation:" Style="{StaticResource Text.Muted}" Margin="0,0,12,2" />
+                    <TextBlock Grid.Column="1" Text="{Binding Operation}" />
+                    <TextBlock Grid.Row="1" Text="Target:" Style="{StaticResource Text.Muted}" Margin="0,0,12,2" />
+                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Target}" TextWrapping="Wrap" />
+                    <TextBlock Grid.Row="2" Text="Server:" Style="{StaticResource Text.Muted}" Margin="0,0,12,2" />
+                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Server}" />
+                </Grid>
+                <TextBlock Text="Possible causes" Style="{StaticResource Text.Section}" />
+                <ItemsControl ItemsSource="{Binding PossibleCauses}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding StringFormat=• {0}}" TextWrapping="Wrap" Margin="0,1" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="Suggested checks" Style="{StaticResource Text.Section}" />
+                <ItemsControl ItemsSource="{Binding SuggestedChecks}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding StringFormat=• {0}}" TextWrapping="Wrap" Margin="0,1" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Expander Header="PowerShell error" Margin="0,12,0,0">
+                    <TextBox Text="{Binding PowerShellMessage, Mode=OneWay}" Style="{StaticResource Text.Code}" TextWrapping="Wrap" MaxHeight="160" />
+                </Expander>
+                <Expander Header="Technical details" Margin="0,6,0,0">
+                    <TextBox Text="{Binding TechnicalDetails, Mode=OneWay}" Style="{StaticResource Text.Code}" MaxHeight="200" />
+                </Expander>
+                <Expander Header="Stack / position" Margin="0,6,0,0">
+                    <TextBox Text="{Binding StackText, Mode=OneWay}" Style="{StaticResource Text.Code}" MaxHeight="200" />
+                </Expander>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

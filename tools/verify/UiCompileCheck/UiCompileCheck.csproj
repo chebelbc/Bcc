@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Verification only (any OS): compiles every C# file of src/MilestoneAdmin.UI against the .NET Framework 4.8 WPF
+    reference assemblies, with XAML-generated members replaced by stubs (see generate_xaml_stubs.py). XAML itself is
+    checked by xaml_lint.py. The shipped application is built from src/MilestoneAdmin.UI on Windows.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <OutputType>Library</OutputType>
+    <AssemblyName>UiCompileCheck</AssemblyName>
+    <RootNamespace>MilestoneAdmin.UI</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\..\src\MilestoneAdmin.UI\**\*.cs" Exclude="..\..\..\src\MilestoneAdmin.UI\obj\**;..\..\..\src\MilestoneAdmin.UI\bin\**" />
+    <Compile Include="$(IntermediateOutputPath)XamlStubs.g.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="PresentationFramework" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Data" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\MilestoneAdmin.Protocol\MilestoneAdmin.Protocol.csproj" />
+    <ProjectReference Include="..\..\..\src\MilestoneAdmin.Domain\MilestoneAdmin.Domain.csproj" />
+    <ProjectReference Include="..\..\..\src\MilestoneAdmin.PSTools\MilestoneAdmin.PSTools.csproj" />
+    <ProjectReference Include="..\..\..\src\MilestoneAdmin.Application\MilestoneAdmin.Application.csproj" />
+    <ProjectReference Include="..\..\..\src\MilestoneAdmin.Infrastructure\MilestoneAdmin.Infrastructure.csproj" />
+  </ItemGroup>
+  <Target Name="GenerateXamlStubs" BeforeTargets="CoreCompile">
+    <Exec Command="python3 &quot;$(MSBuildThisFileDirectory)../generate_xaml_stubs.py&quot; &quot;$(MSBuildThisFileDirectory)../../../src/MilestoneAdmin.UI&quot; &quot;$(IntermediateOutputPath)XamlStubs.g.cs&quot;" />
+  </Target>
+</Project>

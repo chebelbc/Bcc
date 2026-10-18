@@ -1,0 +1,74 @@
+<UserControl x:Class="MilestoneAdmin.UI.Views.SystemView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MilestoneAdmin.UI.ViewModels"
+             xmlns:v="clr-namespace:MilestoneAdmin.UI.Views"
+             xmlns:cap="clr-namespace:MilestoneAdmin.Domain.Capabilities;assembly=MilestoneAdmin.Domain"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:SystemViewModel, IsDesignTimeCreatable=False}">
+    <Grid>
+        <DockPanel Margin="24,20">
+            <DockPanel DockPanel.Dock="Top">
+                <Button DockPanel.Dock="Right" Content="Refresh / read license" Command="{Binding RefreshCommand}" />
+                <TextBlock Text="System" Style="{StaticResource Text.PageTitle}" />
+            </DockPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="420" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <Border Style="{StaticResource Card}">
+                        <ItemsControl ItemsSource="{Binding Facts}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="150" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Key}" Style="{StaticResource Text.Muted}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="License overview" Style="{StaticResource Text.Section}" />
+                            <TextBlock Text="Read with Get-VmsLicenseOverview when available." Style="{StaticResource Text.Muted}" />
+                            <DataGrid ItemsSource="{Binding License}" AutoGenerateColumns="True" MaxHeight="260" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+                <Border Grid.Column="1" Style="{StaticResource Card}">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top">
+                            <TextBlock Text="Capabilities" Style="{StaticResource Text.Section}" />
+                            <TextBlock Text="Each feature is enabled only when the commands it needs exist in the installed MilestonePSTools version." Style="{StaticResource Text.Muted}" Margin="0,0,0,8" />
+                        </StackPanel>
+                        <DataGrid ItemsSource="{Binding Capabilities}">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="" Width="30">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="{x:Type cap:CapabilityStatus}">
+                                            <TextBlock Text="{Binding Symbol}" Foreground="{Binding IsAvailable, Converter={StaticResource StatusBrush}}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Feature" Binding="{Binding Definition.Title}" Width="2*" />
+                                <DataGridTextColumn Header="Area" Binding="{Binding Definition.Area}" Width="*" />
+                                <DataGridTextColumn Header="Details" Binding="{Binding Reason}" Width="4*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+            </Grid>
+        </DockPanel>
+        <v:ErrorBanner VerticalAlignment="Top" />
+        <v:BusyOverlay />
+    </Grid>
+</UserControl>

@@ -1,0 +1,129 @@
+<Window x:Class="MilestoneAdmin.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:MilestoneAdmin.UI.ViewModels"
+        xmlns:act="clr-namespace:MilestoneAdmin.Application.Activity;assembly=MilestoneAdmin.Application"
+        xmlns:nav="clr-namespace:MilestoneAdmin.Application.Navigation;assembly=MilestoneAdmin.Application"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:ShellViewModel, IsDesignTimeCreatable=False}"
+        Title="XProtect Admin Assistant" Width="1360" Height="860" MinWidth="1000" MinHeight="640"
+        WindowStartupLocation="CenterScreen" Background="{StaticResource Brush.Background}">
+    <DockPanel>
+        <!-- Sidebar -->
+        <Border DockPanel.Dock="Left" Width="232" Background="{StaticResource Brush.Sidebar}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="16,18,16,14">
+                    <TextBlock Text="XProtect" Foreground="{StaticResource Brush.SidebarMuted}" FontSize="12" />
+                    <TextBlock Text="Admin Assistant" Foreground="{StaticResource Brush.SidebarText}" FontSize="18" FontWeight="SemiBold" />
+                    <TextBlock Text="powered by MilestonePSTools" Foreground="{StaticResource Brush.SidebarMuted}" FontSize="11" />
+                </StackPanel>
+                <TextBlock DockPanel.Dock="Bottom" Text="{Binding ModuleText}" Foreground="{StaticResource Brush.SidebarMuted}" FontSize="11" Margin="16,8" TextWrapping="Wrap" />
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Nav}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:NavItem}">
+                                <Button Style="{StaticResource Button.Nav}" Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding Key}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Bd" Background="Transparent" Padding="16,7" BorderThickness="3,0,0,0" BorderBrush="Transparent">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding Icon}" Width="26" Foreground="{StaticResource Brush.SidebarMuted}" />
+                                                    <TextBlock Text="{Binding Title}" Foreground="{StaticResource Brush.SidebarText}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource Brush.SidebarHover}" />
+                                                </Trigger>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource Brush.SidebarHover}" />
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Brush.SidebarSelected}" />
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- Top bar -->
+        <Border DockPanel.Dock="Top" Background="{StaticResource Brush.Card}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1" Padding="16,10">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <CheckBox Content="Expert Mode" IsChecked="{Binding ExpertMode}" ToolTip="Shows the PowerShell the application executes, enables Command Explorer execution and advanced actions." />
+                    <Button Content="Disconnect" Command="{Binding DisconnectCommand}" Margin="8,0,0,0" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse Width="10" Height="10" Margin="0,0,8,0" Fill="{Binding IsConnected, Converter={StaticResource StatusBrush}}" />
+                    <TextBlock Text="{Binding ConnectionText}" VerticalAlignment="Center" Margin="0,0,24,0" />
+                    <Grid Width="380">
+                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=200}" ToolTip="Search cameras, hardware, recording servers, workflows and (Expert Mode) commands" />
+                        <TextBlock Text="Search cameras, hardware, servers, workflows..." Style="{StaticResource Text.Muted}" IsHitTestVisible="False" Margin="8,0" VerticalAlignment="Center"
+                                   Visibility="{Binding SearchText, Converter={StaticResource InvNullToVis}}" />
+                        <Popup IsOpen="{Binding HasSearchResults, Mode=OneWay}" Placement="Bottom" StaysOpen="False" Width="520" AllowsTransparency="True">
+                            <Border Background="{StaticResource Brush.Card}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" MaxHeight="420">
+                                <ListBox ItemsSource="{Binding SearchResults}" SelectedItem="{Binding SelectedResult}" BorderThickness="0">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type nav:SearchResult}">
+                                            <StackPanel Margin="4,3">
+                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding Detail}" Style="{StaticResource Text.Muted}" FontSize="11" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Activity panel -->
+        <Border DockPanel.Dock="Bottom" Background="{StaticResource Brush.Card}" BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,1,0,0">
+            <DockPanel>
+                <DockPanel DockPanel.Dock="Top" Margin="12,4">
+                    <Button DockPanel.Dock="Right" Content="Show / hide" Command="{Binding ToggleActivityCommand}" Style="{StaticResource Button.Link}" />
+                    <TextBlock Text="Activity" FontWeight="SemiBold" Margin="0,0,12,0" />
+                    <TextBlock Text="{Binding LastActivity}" Style="{StaticResource Text.Muted}" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+                <ListBox x:Name="ActivityList" ItemsSource="{Binding Activity}" Height="150" BorderThickness="0" FontFamily="{StaticResource Font.Code}" FontSize="12"
+                         Visibility="{Binding ActivityExpanded, Converter={StaticResource BoolToVis}}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type act:ActivityEntry}">
+                            <TextBlock Text="{Binding}" TextWrapping="NoWrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Level}" Value="Error">
+                                                <Setter Property="Foreground" Value="{StaticResource Brush.Danger}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Level}" Value="Warning">
+                                                <Setter Property="Foreground" Value="{StaticResource Brush.Warning}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Level}" Value="Success">
+                                                <Setter Property="Foreground" Value="{StaticResource Brush.Success}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Level}" Value="Detail">
+                                                <Setter Property="Foreground" Value="{StaticResource Brush.Muted}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- Current page -->
+        <ContentControl Content="{Binding Current}" Focusable="False" />
+    </DockPanel>
+</Window>

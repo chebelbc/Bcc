@@ -45,7 +45,29 @@ namespace MilestoneAdmin.PSTools.Execution
             public readonly List<string> Host = new List<string>();
         }
 
-        public async Task<WorkerInfo> StartAsync(WorkerStartOptions options, CancellationToken cancellationToken)
+        public Task<WorkerInfo> StartAsync(WorkerStartOptions options, CancellationToken cancellationToken) => StartCoreAsync(options, initialize: true, cancellationToken);
+
+        /// <summary>
+        /// Starts the worker without importing MilestonePSTools and returns the environment report (PowerShell version,
+        /// .NET release, language mode, execution policy, installed module versions). Used by the setup wizard.
+        /// </summary>
+        public static async Task<JsonObject> ProbeEnvironmentAsync(WorkerStartOptions options, CancellationToken cancellationToken)
+        {
+            using (var e = new WorkerProcessExecutor())
+            {
+                await e.StartCoreAsync(options, initialize: false, cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    return await e.GetEnvironmentAsync(cancellationToken).ConfigureAwait(false);
+                }
+                finally
+                {
+                    await e.StopAsync().ConfigureAwait(false);
+                }
+            }
+        }
+
+        private async Task<WorkerInfo> StartCoreAsync(WorkerStartOptions options, bool initialize, CancellationToken cancellationToken)
         {
             if (IsRunning) throw new InvalidOperationException("The worker is already running.");
             _options = options ?? throw new ArgumentNullException(nameof(options));
@@ -93,6 +115,12 @@ namespace MilestoneAdmin.PSTools.Execution
             }
 
             var ready = await _ready.Task.ConfigureAwait(false);
+            if (!initialize)
+            {
+                Info = new WorkerInfo { WorkerVersion = ready.GetString("workerVersion"), ProcessId = (int)ready.GetInt64("processId") };
+                return Info;
+            }
+
             var init = new JsonObject
             {
                 { "type", MessageTypes.Initialize },

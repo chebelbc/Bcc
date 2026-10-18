@@ -1,0 +1,22 @@
+<UserControl x:Class="MilestoneAdmin.UI.Views.ErrorBanner"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MilestoneAdmin.UI.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:PageViewModel, IsDesignTimeCreatable=False}"
+             Visibility="{Binding Error, Converter={StaticResource NullToVis}}">
+    <Border Background="{StaticResource Brush.DangerSoft}" BorderBrush="{StaticResource Brush.Danger}" BorderThickness="0,0,0,2" Padding="16,10">
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="Details..." Command="{Binding ShowErrorDetailsCommand}" />
+                <Button Content="Dismiss" Command="{Binding DismissErrorCommand}" Margin="0" />
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="{Binding Error.Summary}" FontWeight="SemiBold" Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding Error.Operation, StringFormat=Operation: {0}}" Style="{StaticResource Text.Muted}" />
+            </StackPanel>
+        </DockPanel>
+    </Border>
+</UserControl>

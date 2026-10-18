@@ -1,0 +1,128 @@
+<UserControl x:Class="MilestoneAdmin.UI.Views.AddHardwareView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MilestoneAdmin.UI.ViewModels"
+             xmlns:v="clr-namespace:MilestoneAdmin.UI.Views"
+             xmlns:svc="clr-namespace:MilestoneAdmin.Application.Services;assembly=MilestoneAdmin.Application"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:AddHardwareViewModel, IsDesignTimeCreatable=False}">
+    <Grid>
+        <DockPanel Margin="24,20">
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock Text="Add hardware" Style="{StaticResource Text.PageTitle}" />
+                <TextBlock Text="{Binding StepTitle}" Foreground="{StaticResource Brush.Accent}" FontWeight="SemiBold" Margin="0,0,0,10" />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,12,0,0">
+                <Button Content="Back" Command="{Binding BackCommand}" />
+                <Button Content="Next" Command="{Binding NextCommand}" Style="{StaticResource Button.Primary}" MinWidth="100" Visibility="{Binding IsStep4, Converter={StaticResource InvBoolToVis}}" />
+                <Button Content="Run pre-checks" Command="{Binding PrecheckCommand}" />
+                <Button Content="Start over" Command="{Binding RestartCommand}" />
+            </StackPanel>
+            <Border Style="{StaticResource Card}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- Step 1 -->
+                        <StackPanel Visibility="{Binding IsStep1, Converter={StaticResource BoolToVis}}" MaxWidth="720" HorizontalAlignment="Left">
+                            <TextBlock Text="Recording server" Style="{StaticResource Text.Label}" />
+                            <ComboBox ItemsSource="{Binding Recorders}" SelectedItem="{Binding Recorder}" DisplayMemberPath="Name" />
+                            <TextBlock Text="How should devices be found?" Style="{StaticResource Text.Label}" />
+                            <ComboBox ItemsSource="{Binding Modes}" SelectedItem="{Binding Mode}" />
+                            <TextBlock Style="{StaticResource Text.Muted}" Margin="0,4,0,0" Text="Express: the recording server scans its network. Addresses: scan the given IP addresses or ranges and detect the driver. KnownDriver: add with a driver you choose, without scanning." />
+                            <StackPanel Visibility="{Binding NeedsAddresses, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="IP addresses, host names or ranges (one per line; e.g. 10.1.20.55 or 10.1.20.50-60)" Style="{StaticResource Text.Label}" />
+                                <TextBox Text="{Binding AddressText, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="120" VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" />
+                                <TextBlock Text="{Binding AddressErrors}" Foreground="{StaticResource Brush.Danger}" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <CheckBox Content="Use HTTPS to reach the devices" IsChecked="{Binding UseHttps}" Margin="0,8,0,0" />
+                        </StackPanel>
+                        <!-- Step 2 -->
+                        <StackPanel Visibility="{Binding IsStep2, Converter={StaticResource BoolToVis}}" MaxWidth="720" HorizontalAlignment="Left">
+                            <TextBlock Text="Device credentials" Style="{StaticResource Text.Section}" />
+                            <TextBlock Text="User name" Style="{StaticResource Text.Label}" />
+                            <TextBox Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Text="Password" Style="{StaticResource Text.Label}" />
+                            <PasswordBox v:SecurePassword.Sink="{Binding}" />
+                            <TextBlock Text="Credentials are passed to MilestonePSTools only; they are never shown, logged or written to scripts." Style="{StaticResource Text.Muted}" />
+                            <CheckBox Content="Also try the driver default credentials" IsChecked="{Binding UseDefaultCredentials}" Margin="0,8,0,0" />
+                            <TextBlock Text="Driver" Style="{StaticResource Text.Section}" />
+                            <TextBlock Style="{StaticResource Text.Muted}" Text="KnownDriver mode: required. Addresses mode: optional, limits the scan to this driver. Drivers come from Get-VmsHardwareDriver on the selected recording server." />
+                            <ComboBox ItemsSource="{Binding Drivers}" SelectedItem="{Binding Driver}" DisplayMemberPath="DisplayName" IsTextSearchEnabled="True" Margin="0,4,0,0" />
+                        </StackPanel>
+                        <!-- Step 3 -->
+                        <StackPanel Visibility="{Binding IsStep3, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{Binding ScanStatus}" FontWeight="SemiBold" Margin="0,0,0,8" />
+                            <DataGrid ItemsSource="{Binding Candidates}" IsReadOnly="False" CanUserAddRows="False">
+                                <DataGrid.Columns>
+                                    <DataGridCheckBoxColumn Header="Add" Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="Auto" />
+                                    <DataGridTextColumn Header="Address" Binding="{Binding Address}" IsReadOnly="True" Width="2*" />
+                                    <DataGridTextColumn Header="Driver" Binding="{Binding DriverName}" IsReadOnly="True" Width="2*" />
+                                    <DataGridTextColumn Header="MAC" Binding="{Binding MacAddress}" IsReadOnly="True" Width="*" />
+                                    <DataGridTextColumn Header="Hardware name (optional)" Binding="{Binding HardwareName, UpdateSourceTrigger=PropertyChanged}" Width="2*" />
+                                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" IsReadOnly="True" Width="3*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                        <!-- Step 4 (review overlay) -->
+                        <TextBlock Visibility="{Binding IsStep4, Converter={StaticResource BoolToVis}}" Text="Review the planned additions and apply." Style="{StaticResource Text.Muted}" />
+                        <!-- Step 5 -->
+                        <StackPanel Visibility="{Binding IsStep5, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="Configure the new cameras" Style="{StaticResource Text.Section}" />
+                            <TextBlock Style="{StaticResource Text.Muted}" Text="Choose which channels to enable, their names and (optionally) the recording storage. Changes are reviewed before they are applied." />
+                            <DataGrid ItemsSource="{Binding Channels}" IsReadOnly="False" CanUserAddRows="False" Margin="0,8,0,8">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Hardware" Binding="{Binding HardwareName}" IsReadOnly="True" Width="2*" />
+                                    <DataGridTextColumn Header="Channel" Binding="{Binding Channel}" IsReadOnly="True" Width="Auto" />
+                                    <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled, UpdateSourceTrigger=PropertyChanged}" Width="Auto" />
+                                    <DataGridTextColumn Header="Camera name" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="3*" />
+                                    <DataGridComboBoxColumn Header="Storage" SelectedItemBinding="{Binding Storage}" Width="2*">
+                                        <DataGridComboBoxColumn.ElementStyle>
+                                            <Style TargetType="ComboBox">
+                                                <Setter Property="ItemsSource" Value="{Binding DataContext.StorageNames, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                                            </Style>
+                                        </DataGridComboBoxColumn.ElementStyle>
+                                        <DataGridComboBoxColumn.EditingElementStyle>
+                                            <Style TargetType="ComboBox">
+                                                <Setter Property="ItemsSource" Value="{Binding DataContext.StorageNames, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                                            </Style>
+                                        </DataGridComboBoxColumn.EditingElementStyle>
+                                    </DataGridComboBoxColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Review camera configuration..." Command="{Binding ConfigureChannelsCommand}" Style="{StaticResource Button.Primary}" />
+                                <Button Content="Keep MilestonePSTools defaults" Command="{Binding SkipChannelsCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                        <!-- Step 6 -->
+                        <StackPanel Visibility="{Binding IsStep6, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="Done" Style="{StaticResource Text.Section}" />
+                            <TextBlock Style="{StaticResource Text.Muted}" Text="The inventory has been refreshed. Remember that MilestonePSTools does not add new devices to device groups; use Management Client or the device group commands in Command Explorer." />
+                        </StackPanel>
+                        <!-- Pre-checks -->
+                        <DataGrid ItemsSource="{Binding Checks}" Margin="0,12,0,0" MaxHeight="220">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="" Width="30">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="{x:Type svc:PrecheckItem}">
+                                            <TextBlock Text="{Binding Symbol}" Foreground="{Binding Status, Converter={StaticResource StatusBrush}}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Pre-check" Binding="{Binding Title}" Width="2*" />
+                                <DataGridTextColumn Header="Result" Binding="{Binding Detail}" Width="3*" />
+                                <DataGridTextColumn Header="What to do" Binding="{Binding Remedy}" Width="3*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </DockPanel>
+        <v:ErrorBanner VerticalAlignment="Top" />
+        <v:BusyOverlay />
+        <Grid Visibility="{Binding Review, Converter={StaticResource NullToVis}}" Background="{StaticResource Brush.Overlay}">
+            <v:ReviewPanel DataContext="{Binding Review}" Margin="48,32" />
+        </Grid>
+    </Grid>
+</UserControl>

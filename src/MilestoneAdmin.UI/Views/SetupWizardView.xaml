@@ -1,0 +1,112 @@
+<UserControl x:Class="MilestoneAdmin.UI.Views.SetupWizardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MilestoneAdmin.UI.ViewModels"
+             xmlns:v="clr-namespace:MilestoneAdmin.UI.Views"
+             xmlns:svc="clr-namespace:MilestoneAdmin.Application.Services;assembly=MilestoneAdmin.Application"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:SetupWizardViewModel, IsDesignTimeCreatable=False}">
+    <Grid>
+        <DockPanel Margin="24,20">
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock Text="Welcome to XProtect Admin Assistant" Style="{StaticResource Text.PageTitle}" />
+                <TextBlock Text="This assistant checks that this workstation can run MilestonePSTools, explains what needs to be installed, and connects you to your XProtect system. Nothing on this computer is changed without your explicit action." Style="{StaticResource Text.Muted}" Margin="0,0,0,12" />
+            </StackPanel>
+            <Border DockPanel.Dock="Left" Style="{StaticResource Card}" Width="240" VerticalAlignment="Top">
+                <ItemsControl ItemsSource="{Binding Steps}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:SetupStep}">
+                            <TextBlock Margin="0,4">
+                                <Run Text="{Binding Number, Mode=OneWay}" /><Run Text=". " /><Run Text="{Binding Title, Mode=OneWay}" />
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{StaticResource Brush.Muted}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDone}" Value="True"><Setter Property="Foreground" Value="{StaticResource Brush.Success}" /></DataTrigger>
+                                            <DataTrigger Binding="{Binding IsCurrent}" Value="True"><Setter Property="Foreground" Value="{StaticResource Brush.Accent}" /><Setter Property="FontWeight" Value="SemiBold" /></DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+            <Border Style="{StaticResource Card}">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,12,0,0">
+                        <Button Content="Back" Command="{Binding BackCommand}" />
+                        <Button Content="Next" Command="{Binding NextCommand}" Style="{StaticResource Button.Primary}" MinWidth="90" />
+                        <Button Content="Re-run checks" Command="{Binding RunChecksCommand}" />
+                        <Button Content="Skip setup" Command="{Binding SkipCommand}" />
+                    </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <!-- Steps 1-3: checks -->
+                            <StackPanel Visibility="{Binding IsStep1, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="Environment check" Style="{StaticResource Text.Section}" />
+                                <TextBlock Text="The checks run in a separate Windows PowerShell process without loading MilestonePSTools." Style="{StaticResource Text.Muted}" />
+                            </StackPanel>
+                            <StackPanel Visibility="{Binding IsStep2, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="Windows PowerShell 5.1" Style="{StaticResource Text.Section}" />
+                                <TextBlock Text="MilestonePSTools runs only in 64-bit Windows PowerShell 5.1 (Desktop edition) on .NET Framework 4.7.2 or later. PowerShell 7 can coexist but is not used." Style="{StaticResource Text.Muted}" />
+                            </StackPanel>
+                            <StackPanel Visibility="{Binding IsStep3, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="MilestonePSTools" Style="{StaticResource Text.Section}" />
+                                <TextBlock Text="{Binding InstalledVersions, StringFormat=Installed versions: {0}}" FontWeight="SemiBold" />
+                                <TextBlock Text="Install MilestonePSTools (next step) before continuing." Style="{StaticResource Text.Muted}" Visibility="{Binding ModuleInstalled, Converter={StaticResource InvBoolToVis}}" />
+                            </StackPanel>
+                            <DataGrid ItemsSource="{Binding Checks}" Margin="0,8,0,0" MaxHeight="300"
+                                      Visibility="{Binding IsStep4, Converter={StaticResource InvBoolToVis}}">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="" Width="30">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate DataType="{x:Type svc:PrecheckItem}">
+                                                <TextBlock Text="{Binding Symbol}" Foreground="{Binding Status, Converter={StaticResource StatusBrush}}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Check" Binding="{Binding Title}" Width="2*" />
+                                    <DataGridTextColumn Header="Result" Binding="{Binding Detail}" Width="3*" />
+                                    <DataGridTextColumn Header="What to do" Binding="{Binding Remedy}" Width="3*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- Step 4: install guidance -->
+                            <StackPanel Visibility="{Binding IsStep4, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="Install or update MilestonePSTools" Style="{StaticResource Text.Section}" />
+                                <TextBlock Style="{StaticResource Text.Muted}" Text="The application never installs software, trusts repositories, installs package providers, changes the execution policy or elevates itself. If MilestonePSTools is missing or outdated, run one of these commands yourself in Windows PowerShell 5.1:" />
+                                <TextBox Text="{Binding InstallCommandText, Mode=OneWay}" Style="{StaticResource Text.Code}" Margin="0,8,0,4" />
+                                <TextBox Text="{Binding UpdateCommandText, Mode=OneWay}" Style="{StaticResource Text.Code}" Margin="0,0,0,8" />
+                                <TextBlock Style="{StaticResource Text.Muted}" Text="What to expect: PowerShell may ask to install the NuGet package provider and warn that the PSGallery repository is untrusted. Both are standard PowerShell prompts; read them before answering. -Scope CurrentUser needs no administrator rights. If the execution policy is 'Restricted', an administrator must choose a policy (MilestonePSTools documentation uses RemoteSigned). Offline systems: use Save-Module on an internet-connected computer and copy the module folder (see the MilestonePSTools 'Getting started' documentation)." />
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Button Content="Copy install command" Command="{Binding CopyInstallCommand}" />
+                                    <Button Content="Open Windows PowerShell with this command..." Command="{Binding OpenPowerShellCommand}" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Step 5: privacy and license -->
+                            <StackPanel Visibility="{Binding IsStep5, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="Privacy and license" Style="{StaticResource Text.Section}" />
+                                <TextBlock Style="{StaticResource Text.Muted}" Text="MilestonePSTools sends anonymous usage telemetry to Milestone (module import, connections, command names) unless disabled. It does not include credentials. This application never sends telemetry of its own." />
+                                <CheckBox Content="Disable MilestonePSTools telemetry for this application (recommended; sets VMS_ApplicationInsights__Enabled=false for the worker process only)" IsChecked="{Binding DisableTelemetry}" Margin="0,8,0,12" />
+                                <TextBlock Style="{StaticResource Text.Muted}" Text="MilestonePSTools uses the Milestone MIP SDK. Connecting requires accepting the Milestone MIP SDK end-user license agreement once per Windows user (Connect-Vms -AcceptEula). Review the agreement from Milestone before accepting." />
+                                <CheckBox Content="I have read and accept the Milestone MIP SDK end-user license agreement" IsChecked="{Binding EulaAccepted}" Margin="0,8,0,0" />
+                            </StackPanel>
+
+                            <!-- Steps 6-8 -->
+                            <StackPanel Visibility="{Binding IsStep6, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="Connect to XProtect" Style="{StaticResource Text.Section}" />
+                                <TextBlock Style="{StaticResource Text.Muted}" Text="Next opens the Connect page. Signing in tests authentication (step 7); the dashboard then retrieves the environment: recording servers, hardware and cameras (step 8)." />
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </DockPanel>
+        <v:ErrorBanner VerticalAlignment="Top" />
+        <v:BusyOverlay />
+    </Grid>
+</UserControl>

@@ -403,19 +403,21 @@ namespace MilestoneAdmin.Application.Workflows
     public sealed class HardwareEditWorkflow
     {
         private readonly SessionContext _session;
+        private readonly OperationRunner _runner;
         private readonly BulkOperationRunner _bulk;
         private readonly ScriptService _scripts;
 
-        public HardwareEditWorkflow(SessionContext session, BulkOperationRunner bulk, ScriptService scripts)
+        public HardwareEditWorkflow(SessionContext session, OperationRunner runner, BulkOperationRunner bulk, ScriptService scripts)
         {
             _session = session;
+            _runner = runner;
             _bulk = bulk;
             _scripts = scripts;
         }
 
         public ChangePlan BuildEnablePlan(IReadOnlyList<HardwareInfo> hardware, bool enable)
         {
-            var plan = new ChangePlan { Title = enable ? "Enable hardware" : "Disable hardware", OperationId = "hardware.update", Risk = RiskLevel.Modify, WhatIfAvailable = true };
+            var plan = new ChangePlan { Title = enable ? "Enable hardware" : "Disable hardware", OperationId = "hardware.update", Risk = RiskLevel.Modify, WhatIfAvailable = _session.Catalog?.Find("Set-VmsHardware")?.SupportsShouldProcess == true };
             foreach (var h in hardware)
             {
                 var item = new PlannedChange { TargetType = "Hardware", TargetId = h.Id, TargetName = h.Name, TargetHandle = h.Handle, Operation = "Update" };
@@ -429,6 +431,22 @@ namespace MilestoneAdmin.Application.Workflows
             plan.Summary.Add(new KeyValuePair<string, string>("Hardware to change", plan.ChangedItemCount.ToString(CultureInfo.InvariantCulture)));
             plan.ScriptPreview = _scripts.Script(hardware.Where(h => h.Enabled != enable).Select(h => _session.Gateway.PlanSetHardware(h, enable, null)));
             return plan;
+        }
+
+        public async Task<List<string>> RunEnableWhatIfAsync(ChangePlan plan, IReadOnlyList<HardwareInfo> hardware, bool enable, CancellationToken ct)
+        {
+            var lines = new List<string>();
+            foreach (var h in hardware.Where(x => x.Enabled != enable))
+            {
+                var outcome = await _runner.RunAsync(_session.Gateway.PlanSetHardware(h, enable, null).AsWhatIf(), new OperationContext("preview hardware change", h.Name, h.RecordingServerName), null, ct, quiet: true).ConfigureAwait(false);
+                if (outcome.Success) lines.AddRange(outcome.Result.WhatIfLines);
+                else lines.Add($"{h.Name}: preview failed - {outcome.Error?.Summary}");
+            }
+
+            plan.PreviewKind = PreviewKind.PowerShellWhatIf;
+            plan.WhatIfOutput.Clear();
+            plan.WhatIfOutput.AddRange(lines);
+            return lines;
         }
 
         public Task<BulkResult<HardwareInfo>> ApplyEnableAsync(IReadOnlyList<HardwareInfo> hardware, bool enable, IProgress<BulkProgress> progress, CancellationToken ct) =>

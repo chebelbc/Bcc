@@ -1,0 +1,103 @@
+<UserControl x:Class="MilestoneAdmin.UI.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MilestoneAdmin.UI.ViewModels"
+             xmlns:v="clr-namespace:MilestoneAdmin.UI.Views"
+             xmlns:audit="clr-namespace:MilestoneAdmin.Domain.Audit;assembly=MilestoneAdmin.Domain"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:DashboardViewModel, IsDesignTimeCreatable=False}">
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="24,20">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button Content="Connect..." Command="{Binding ConnectCommand}" Visibility="{Binding IsConnected, Converter={StaticResource InvBoolToVis}}" Style="{StaticResource Button.Primary}" />
+                        <Button Content="Refresh" Command="{Binding RefreshCommand}" />
+                    </StackPanel>
+                    <TextBlock Text="Dashboard" Style="{StaticResource Text.PageTitle}" />
+                </DockPanel>
+                <TextBlock Text="{Binding LoadedAt, StringFormat=Inventory loaded: {0}}" Style="{StaticResource Text.Muted}" Margin="0,0,0,14" />
+
+                <WrapPanel>
+                    <Border Style="{StaticResource Card}" Width="430">
+                        <StackPanel>
+                            <TextBlock Text="XProtect system" Style="{StaticResource Text.Section}" Margin="0,0,0,8" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="170" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Connected" Style="{StaticResource Text.Label}" />
+                                <TextBlock Grid.Column="1" Text="{Binding IsConnected, Converter={StaticResource YesNo}}" Margin="0,6,0,2" FontWeight="SemiBold" />
+                                <TextBlock Grid.Row="1" Text="Management server" Style="{StaticResource Text.Label}" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ManagementServer}" Margin="0,6,0,2" TextWrapping="Wrap" />
+                                <TextBlock Grid.Row="2" Text="XProtect version" Style="{StaticResource Text.Label}" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding XProtectVersion}" Margin="0,6,0,2" />
+                                <TextBlock Grid.Row="3" Text="MilestonePSTools" Style="{StaticResource Text.Label}" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ModuleVersion}" Margin="0,6,0,2" />
+                                <TextBlock Grid.Row="4" Text="Signed in as" Style="{StaticResource Text.Label}" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Account}" Margin="0,6,0,2" />
+                                <TextBlock Grid.Row="5" Text="Command catalog" Style="{StaticResource Text.Label}" />
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding CatalogSource}" Margin="0,6,0,2" TextWrapping="Wrap" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}" Width="150"><StackPanel><TextBlock Text="Recording servers" Style="{StaticResource Text.Muted}" /><TextBlock Text="{Binding RecordingServers}" Style="{StaticResource Text.Metric}" /></StackPanel></Border>
+                    <Border Style="{StaticResource Card}" Width="150"><StackPanel><TextBlock Text="Hardware" Style="{StaticResource Text.Muted}" /><TextBlock Text="{Binding Hardware}" Style="{StaticResource Text.Metric}" /><TextBlock Text="{Binding DisabledHardware, StringFormat={}{0} disabled}" Style="{StaticResource Text.Muted}" /></StackPanel></Border>
+                    <Border Style="{StaticResource Card}" Width="150"><StackPanel><TextBlock Text="Cameras" Style="{StaticResource Text.Muted}" /><TextBlock Text="{Binding Cameras}" Style="{StaticResource Text.Metric}" /><TextBlock Text="{Binding DisabledCameras, StringFormat={}{0} disabled}" Style="{StaticResource Text.Muted}" /></StackPanel></Border>
+                </WrapPanel>
+
+                <WrapPanel>
+                    <Border Style="{StaticResource Card}" Width="430">
+                        <StackPanel>
+                            <TextBlock Text="Favorites" Style="{StaticResource Text.Section}" Margin="0,0,0,8" />
+                            <ItemsControl ItemsSource="{Binding Favorites}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:WorkflowTile}">
+                                        <Button Command="{Binding OpenCommand}" HorizontalContentAlignment="Left" Margin="0,0,0,6" IsEnabled="{Binding Available}" ToolTip="{Binding Reason}">
+                                            <TextBlock Text="{Binding Title}" />
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}" Width="480">
+                        <StackPanel>
+                            <TextBlock Text="Warnings" Style="{StaticResource Text.Section}" Margin="0,0,0,8" />
+                            <ItemsControl ItemsSource="{Binding Warnings}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding StringFormat=! {0}}" Foreground="{StaticResource Brush.Warning}" TextWrapping="Wrap" Margin="0,2" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </WrapPanel>
+
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Recent operations (audit log)" Style="{StaticResource Text.Section}" Margin="0,0,0,8" />
+                        <DataGrid ItemsSource="{Binding RecentOperations}" MaxHeight="280">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Time" Binding="{Binding Timestamp, StringFormat=g}" Width="140" />
+                                <DataGridTextColumn Header="Operation" Binding="{Binding Operation}" Width="2*" />
+                                <DataGridTextColumn Header="Target" Binding="{Binding Target}" Width="2*" />
+                                <DataGridTextColumn Header="Result" Binding="{Binding Result}" Width="Auto" />
+                                <DataGridTextColumn Header="User" Binding="{Binding WindowsUser}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+        <v:ErrorBanner VerticalAlignment="Top" />
+        <v:BusyOverlay />
+    </Grid>
+</UserControl>

@@ -1,0 +1,80 @@
+<UserControl x:Class="MilestoneAdmin.UI.Views.AutomationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MilestoneAdmin.UI.ViewModels"
+             xmlns:v="clr-namespace:MilestoneAdmin.UI.Views"
+             xmlns:auto="clr-namespace:MilestoneAdmin.Application.Automation;assembly=MilestoneAdmin.Application"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:AutomationViewModel, IsDesignTimeCreatable=False}">
+    <Grid>
+        <DockPanel Margin="24,20">
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock Text="Automation · Job Builder" Style="{StaticResource Text.PageTitle}" />
+                <TextBlock Style="{StaticResource Text.Muted}" Margin="0,0,0,10" Text="Jobs are deterministic data, not scripts: a camera source, filters and one action. Running a job that changes configuration always opens the same review screen as the guided workflows." />
+            </StackPanel>
+            <Border DockPanel.Dock="Left" Width="240" Style="{StaticResource Card}">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="New" Command="{Binding NewCommand}" />
+                        <Button Content="Delete" Command="{Binding DeleteCommand}" />
+                    </StackPanel>
+                    <ListBox ItemsSource="{Binding Jobs}" SelectedItem="{Binding Selected}" DisplayMemberPath="Name" />
+                </DockPanel>
+            </Border>
+            <Border Style="{StaticResource Card}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel MaxWidth="760" HorizontalAlignment="Left">
+                        <TextBlock Text="Job name" Style="{StaticResource Text.Label}" />
+                        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Text="1. Cameras from" Style="{StaticResource Text.Section}" />
+                        <StackPanel Orientation="Horizontal">
+                            <ComboBox ItemsSource="{Binding Sources}" SelectedItem="{Binding Source}" Width="200" />
+                            <TextBox Text="{Binding SourceName, UpdateSourceTrigger=PropertyChanged}" Width="260" Margin="8,0,0,0" ToolTip="Recording server or hardware name (ignored for AllCameras)" />
+                        </StackPanel>
+                        <TextBlock Text="2. Filters (all must match)" Style="{StaticResource Text.Section}" />
+                        <ItemsControl ItemsSource="{Binding Filters}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type auto:JobFilter}">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <ComboBox ItemsSource="{Binding DataContext.Properties, RelativeSource={RelativeSource AncestorType=UserControl}}" SelectedItem="{Binding Property}" Width="190" />
+                                        <ComboBox ItemsSource="{Binding DataContext.Operators, RelativeSource={RelativeSource AncestorType=UserControl}}" SelectedItem="{Binding Operator}" Width="120" Margin="6,0" />
+                                        <TextBox Text="{Binding Value}" Width="220" />
+                                        <Button Content="Remove" Margin="6,0,0,0" Command="{Binding DataContext.RemoveFilterCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Content="Add filter" Command="{Binding AddFilterCommand}" HorizontalAlignment="Left" />
+                        <TextBlock Text="3. Action" Style="{StaticResource Text.Section}" />
+                        <StackPanel Orientation="Horizontal">
+                            <ComboBox ItemsSource="{Binding Actions}" SelectedItem="{Binding Action}" Width="200" />
+                            <ComboBox ItemsSource="{Binding SettableProperties}" SelectedItem="{Binding ActionProperty}" Width="190" Margin="8,0" />
+                            <TextBox Text="{Binding ActionValue, UpdateSourceTrigger=PropertyChanged}" Width="160" ToolTip="Value for SetCameraProperty (True/False or number or text)" />
+                        </StackPanel>
+                        <TextBlock Text="Workflow" Style="{StaticResource Text.Section}" />
+                        <ItemsControl ItemsSource="{Binding Steps}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" Margin="0,2" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button Content="Save" Command="{Binding SaveCommand}" />
+                            <Button Content="Preview matching cameras" Command="{Binding PreviewCommand}" />
+                            <Button Content="Run (review first)" Command="{Binding RunCommand}" Style="{StaticResource Button.Primary}" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding Preview}" TextWrapping="Wrap" Margin="0,10,0,0" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </DockPanel>
+        <v:ErrorBanner VerticalAlignment="Top" />
+        <v:BusyOverlay />
+        <Grid Visibility="{Binding Review, Converter={StaticResource NullToVis}}" Background="{StaticResource Brush.Overlay}">
+            <v:ReviewPanel DataContext="{Binding Review}" Margin="48,32" />
+        </Grid>
+    </Grid>
+</UserControl>

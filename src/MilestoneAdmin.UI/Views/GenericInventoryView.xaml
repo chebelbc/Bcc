@@ -1,0 +1,26 @@
+<UserControl x:Class="MilestoneAdmin.UI.Views.GenericInventoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:MilestoneAdmin.UI.ViewModels"
+             xmlns:v="clr-namespace:MilestoneAdmin.UI.Views"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:GenericInventoryViewModel, IsDesignTimeCreatable=False}">
+    <Grid>
+        <DockPanel Margin="24,20">
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock Text="{Binding Title}" Style="{StaticResource Text.PageTitle}" />
+                <TextBlock Text="{Binding Note}" Style="{StaticResource Text.Muted}" Margin="0,0,0,10" />
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <ComboBox ItemsSource="{Binding Tabs}" SelectedItem="{Binding Selected}" DisplayMemberPath="Title" Width="240" />
+                    <Button Content="Load" Command="{Binding LoadCommand}" Style="{StaticResource Button.Primary}" Margin="8,0,0,0" />
+                    <TextBlock Text="{Binding Selected.Status}" Style="{StaticResource Text.Muted}" VerticalAlignment="Center" />
+                </StackPanel>
+            </StackPanel>
+            <DataGrid ItemsSource="{Binding Selected.Data}" AutoGenerateColumns="True" />
+        </DockPanel>
+        <v:ErrorBanner VerticalAlignment="Top" />
+        <v:BusyOverlay />
+    </Grid>
+</UserControl>
