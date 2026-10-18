@@ -1,0 +1,99 @@
+{
+  "$comment": "Which MilestonePSTools commands the GUI uses, and where. Input for tools/catalog/generate_docs.py (SUPPORTED_COMMANDS.md). CatalogDriftTests verify that every listed command exists in the catalog and that every command the application builds (PsCommands) is listed. Keep entries to commands with a real call site.",
+  "wizards": {
+    "Start-VmsHardwareScan": [
+      "Add Hardware",
+      "CSV Onboarding"
+    ],
+    "Get-VmsHardwareDriver": [
+      "Add Hardware",
+      "CSV Onboarding"
+    ],
+    "Add-VmsHardware": [
+      "Add Hardware",
+      "CSV Onboarding"
+    ],
+    "Set-VmsCamera": [
+      "Add Hardware",
+      "CSV Onboarding",
+      "Camera Edit",
+      "Job Builder"
+    ],
+    "Set-VmsDeviceStorage": [
+      "Add Hardware",
+      "CSV Onboarding",
+      "Move Storage"
+    ],
+    "Set-VmsHardware": [
+      "Enable/Disable Hardware"
+    ],
+    "Remove-VmsHardware": [
+      "Remove Hardware"
+    ],
+    "Connect-Vms": [
+      "Connect"
+    ]
+  },
+  "screens": {
+    "Connect-Vms": [
+      "Connect"
+    ],
+    "Disconnect-Vms": [
+      "Connect"
+    ],
+    "Test-VmsConnection": [
+      "Connection guard (worker)"
+    ],
+    "Get-VmsManagementServer": [
+      "Connect",
+      "Dashboard",
+      "System"
+    ],
+    "Get-VmsLicenseOverview": [
+      "System"
+    ],
+    "Get-VmsRecordingServer": [
+      "Recording Servers"
+    ],
+    "Get-VmsHardware": [
+      "Hardware"
+    ],
+    "Get-VmsHardwarePassword": [
+      "Hardware"
+    ],
+    "Get-VmsCamera": [
+      "Cameras & Devices"
+    ],
+    "Get-VmsStorage": [
+      "Storage"
+    ],
+    "Get-VmsDeviceStatus": [
+      "Maintenance"
+    ],
+    "Get-VmsRole": [
+      "Users & Roles"
+    ],
+    "Get-VmsBasicUser": [
+      "Users & Roles"
+    ],
+    "Get-VmsRule": [
+      "Rules & Events"
+    ],
+    "Get-VmsAlarmDefinition": [
+      "Rules & Events"
+    ],
+    "Get-VmsViewGroup": [
+      "Smart Client"
+    ],
+    "Get-VmsClientProfile": [
+      "Smart Client"
+    ],
+    "Get-VmsCameraReport": [
+      "Reports"
+    ]
+  },
+  "appManagedImplemented": [
+    "Connect-Vms",
+    "Disconnect-Vms"
+  ]
+}

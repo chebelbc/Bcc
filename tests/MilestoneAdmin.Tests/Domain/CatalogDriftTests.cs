@@ -44,7 +44,7 @@ namespace MilestoneAdmin.Tests.Domain
         public void Application_command_builders_use_only_documented_commands_and_parameters()
         {
             var steps = PsCommands.Samples().ToList();
-            Assert.True(steps.Count > 30, "Samples() should cover every builder");
+            Assert.True(steps.Count > 20, "Samples() should cover every builder");
             var problems = steps.SelectMany(s => Missing(s.Command, s.Parameters.Select(p => p.Key))).Distinct().ToList();
             Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
         }
@@ -84,6 +84,17 @@ namespace MilestoneAdmin.Tests.Domain
                 Assert.True(module.ExportedFunctions.Count > 15);
                 Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
             }
+        }
+
+        [Fact]
+        public void Gui_support_map_covers_every_command_the_application_builds()
+        {
+            var support = JsonNode.Parse(File.ReadAllText(Path.Combine(TestPaths.RepoRoot, "catalog", "gui-support.json"))).AsObject();
+            var listed = support.GetObject("wizards").Select(kv => kv.Key).Concat(support.GetObject("screens").Select(kv => kv.Key)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var unlisted = PsCommands.Samples().Select(s => s.Command).Distinct().Where(c => !listed.Contains(c)).ToList();
+            Assert.True(unlisted.Count == 0, "Add to catalog/gui-support.json: " + string.Join(", ", unlisted));
+            var unknown = listed.Where(c => Catalog.Find(c) == null).ToList();
+            Assert.True(unknown.Count == 0, "Not in catalog: " + string.Join(", ", unknown));
         }
 
         [Fact]

@@ -427,8 +427,9 @@ namespace MilestoneAdmin.UI.ViewModels
 
         private void OpenPowerShell()
         {
-            // Explicit, visible administrator action: opens a normal Windows PowerShell window with the install command
-            // pre-filled for review. PowerShell itself will ask about the PSGallery repository / NuGet provider if needed.
+            // Explicit, visible user action: after confirmation, opens a normal Windows PowerShell window that runs the
+            // install command shown in the dialog. PowerShell itself asks about the PSGallery repository / NuGet provider
+            // if needed; the user answers those prompts in that window.
             if (!Services.Dialogs.Confirm("Install MilestonePSTools",
                     "A Windows PowerShell window will open and run:\n\n" + InstallCommand + "\n\n" +
                     "PowerShell may ask you to install the NuGet provider and to trust the PowerShell Gallery repository. " +

@@ -78,4 +78,4 @@ Windows. Because the boundary is a protocol, moving the GUI to .NET 8+ later is 
   *PowerShell WhatIf* separately from the application's *validated preview*.
 * The worker's `PSHost` refuses interactive prompts, so a command that unexpectedly wants input fails fast instead of hanging.
 * Telemetry is controlled explicitly: the setup wizard explains MilestonePSTools telemetry and the worker sets
-  `VMS_ApplicationInsights__Enabled` for its own process according to the user's choice (default: follow module setting).
+  `VMS_ApplicationInsights__Enabled=false` for its own process by default; the user can switch to *follow the module setting* in Settings. The module-wide setting (`Set-VmsModuleConfig`) is never changed by the application.

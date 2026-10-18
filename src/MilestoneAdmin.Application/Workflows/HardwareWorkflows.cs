@@ -412,7 +412,7 @@ namespace MilestoneAdmin.Application.Workflows
                 h => new OperationContext("remove hardware", h.Name, h.RecordingServerName), progress, ct);
     }
 
-    /// <summary>Enable, disable or rename hardware (Set-VmsHardware, supports -WhatIf).</summary>
+    /// <summary>Enable or disable hardware (Set-VmsHardware, supports -WhatIf).</summary>
     public sealed class HardwareEditWorkflow
     {
         private readonly SessionContext _session;

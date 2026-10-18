@@ -362,5 +362,24 @@ class CommittedCatalogTests(unittest.TestCase):
                     self.assertTrue(p["isSecret"], c["name"] + " -" + p["name"])
 
 
+class GeneratedDocsTests(unittest.TestCase):
+    def test_committed_docs_are_up_to_date(self):
+        import report
+        with open(os.path.join(REPO, "catalog", "milestonepstools-catalog.json"), encoding="utf-8") as f:
+            catalog = json.load(f)
+        with open(os.path.join(REPO, "catalog", "gui-support.json"), encoding="utf-8") as f:
+            support = json.load(f)
+        tmp = tempfile.mkdtemp(prefix="docs-")
+        try:
+            for name, writer, committed in (
+                    ("inv.md", lambda p: report.write_report(catalog, p), os.path.join(REPO, "docs", "COMMAND_INVENTORY.md")),
+                    ("sup.md", lambda p: report.write_supported_commands(catalog, support, p), os.path.join(REPO, "SUPPORTED_COMMANDS.md"))):
+                out = os.path.join(tmp, name)
+                writer(out)
+                with open(out, encoding="utf-8") as a, open(committed, encoding="utf-8") as b:
+                    self.assertEqual(a.read(), b.read(), committed + " is stale; run tools/catalog/generate_docs.py")
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
 if __name__ == "__main__":
     unittest.main()

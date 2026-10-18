@@ -40,18 +40,7 @@ namespace MilestoneAdmin.PSTools.Commands
 
         public static PipelineStep DisconnectVms() => new PipelineStep("Disconnect-Vms");
 
-        public static PipelineStep TestVmsConnection() => new PipelineStep("Test-VmsConnection");
-
         public static PipelineStep GetVmsManagementServer() => new PipelineStep("Get-VmsManagementServer");
-
-        public static PipelineStep GetVmsSite(bool listAvailable = false)
-        {
-            var s = new PipelineStep("Get-VmsSite");
-            if (listAvailable) s.With("ListAvailable", ParameterValue.Switch());
-            return s;
-        }
-
-        public static PipelineStep GetVmsModuleConfig() => new PipelineStep("Get-VmsModuleConfig");
 
         // ---------------------------------------------------------------- system / inventory
         public static PipelineStep GetVmsRecordingServer() => new PipelineStep("Get-VmsRecordingServer");
@@ -64,8 +53,6 @@ namespace MilestoneAdmin.PSTools.Commands
             return s.With("EnableFilter", ParameterValue.String("All"));
         }
 
-        public static PipelineStep GetVmsHardwareById(Guid id) => new PipelineStep("Get-VmsHardware").With("Id", ParameterValue.Guid(id));
-
         /// <summary>All cameras (enabled and disabled; the module default is enabled only).</summary>
         public static PipelineStep GetVmsCamera(IEnumerable<HardwareInfo> hardware = null)
         {
@@ -74,9 +61,6 @@ namespace MilestoneAdmin.PSTools.Commands
             if (list != null && list.Count > 0) s.With("Hardware", Refs(list));
             return s.With("EnableFilter", ParameterValue.String("All"));
         }
-
-        public static PipelineStep GetVmsCameraById(IEnumerable<Guid> ids) =>
-            new PipelineStep("Get-VmsCamera").With("Id", ParameterValue.List(ids.Select(ParameterValue.Guid)));
 
         public static PipelineStep GetVmsStorage(RecordingServerInfo recorder = null)
         {
@@ -117,8 +101,6 @@ namespace MilestoneAdmin.PSTools.Commands
 
         public static PipelineStep GetVmsLicenseOverview() => new PipelineStep("Get-VmsLicenseOverview");
 
-        public static PipelineStep GetVmsFailoverGroup() => new PipelineStep("Get-VmsFailoverGroup");
-
         public static PipelineStep GetVmsCameraReport(bool includeRetentionInfo, bool includeRecordingStats)
         {
             var s = new PipelineStep("Get-VmsCameraReport");
@@ -143,16 +125,6 @@ namespace MilestoneAdmin.PSTools.Commands
             if (dn != null && dn.Count > 0) s.With("DriverNumber", ParameterValue.List(dn.Select(d => ParameterValue.Integer(d))));
             var df = driverFamilies?.ToList();
             if (df != null && df.Count > 0) s.With("DriverFamily", ParameterValue.StringList(df));
-            return ScanOptions(s, credentials, useDefaultCredentials, useHttps);
-        }
-
-        public static PipelineStep StartVmsHardwareScanRange(IEnumerable<RecordingServerInfo> recorders, string startIp, string endIp, IEnumerable<int> driverNumbers,
-            IReadOnlyList<(string User, string SecretId)> credentials, bool useDefaultCredentials, bool useHttps)
-        {
-            var s = new PipelineStep("Start-VmsHardwareScan").With("RecordingServer", Refs(recorders))
-                .With("Start", ParameterValue.String(startIp)).With("End", ParameterValue.String(endIp));
-            var dn = driverNumbers?.ToList();
-            if (dn != null && dn.Count > 0) s.With("DriverNumber", ParameterValue.List(dn.Select(d => ParameterValue.Integer(d))));
             return ScanOptions(s, credentials, useDefaultCredentials, useHttps);
         }
 
@@ -255,15 +227,10 @@ namespace MilestoneAdmin.PSTools.Commands
             var creds = new List<(string, string)> { ("root", "s1") };
             yield return ConnectVms(new Uri("http://server"), "s1", "user", true, true, true, true);
             yield return DisconnectVms();
-            yield return TestVmsConnection();
             yield return GetVmsManagementServer();
-            yield return GetVmsSite(true);
-            yield return GetVmsModuleConfig();
             yield return GetVmsRecordingServer();
             yield return GetVmsHardware(rs);
-            yield return GetVmsHardwareById(Guid.NewGuid());
             yield return GetVmsCamera(new[] { hw });
-            yield return GetVmsCameraById(new[] { Guid.NewGuid() });
             yield return GetVmsStorage(rs);
             yield return GetVmsDeviceStatus(new[] { Guid.NewGuid() }, new[] { "Camera" });
             yield return GetVmsHardwareDriver(rs);
@@ -274,11 +241,9 @@ namespace MilestoneAdmin.PSTools.Commands
             yield return GetVmsViewGroup();
             yield return GetVmsClientProfile();
             yield return GetVmsLicenseOverview();
-            yield return GetVmsFailoverGroup();
             yield return GetVmsCameraReport(true, true);
             yield return StartVmsHardwareScanExpress(new[] { rs }, creds, true, true);
             yield return StartVmsHardwareScanManual(new[] { rs }, new[] { new Uri("http://10.0.0.1") }, new[] { 806 }, new[] { "AXIS" }, creds, true, true);
-            yield return StartVmsHardwareScanRange(new[] { rs }, "10.0.0.1", "10.0.0.9", new[] { 806 }, creds, true, true);
             yield return AddVmsHardwareFromScan(new[] { scan }, "n", true, true);
             yield return AddVmsHardwareManual(rs, new Uri("http://10.0.0.1"), "n", 806, "root", "s1", true, true);
             yield return SetVmsHardware(new[] { hw }, true, "n", "d");

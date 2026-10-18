@@ -44,11 +44,10 @@ namespace MilestoneAdmin.Domain.Capabilities
         public static readonly IReadOnlyList<CapabilityDefinition> All = new List<CapabilityDefinition>
         {
             new CapabilityDefinition { Id = "connect", Area = "Connection", Title = "Connect to XProtect", RequiredCommands = new[] { "Connect-Vms", "Disconnect-Vms", "Test-VmsConnection", "Get-VmsManagementServer" } },
-            new CapabilityDefinition { Id = "sites", Area = "System", Title = "Site information", RequiredCommands = new[] { "Get-VmsSite" } },
             new CapabilityDefinition { Id = "recorders.query", Area = "System", Title = "Recording server inventory", RequiredCommands = new[] { "Get-VmsRecordingServer" } },
             new CapabilityDefinition { Id = "hardware.query", Area = "Hardware", Title = "Hardware inventory", RequiredCommands = new[] { "Get-VmsHardware" } },
             new CapabilityDefinition { Id = "hardware.add", Area = "Hardware", Title = "Add hardware (scan + add)", RequiredCommands = new[] { "Start-VmsHardwareScan", "Add-VmsHardware", "Get-VmsHardwareDriver" } },
-            new CapabilityDefinition { Id = "hardware.update", Area = "Hardware", Title = "Enable/disable/rename hardware", RequiredCommands = new[] { "Set-VmsHardware" } },
+            new CapabilityDefinition { Id = "hardware.update", Area = "Hardware", Title = "Enable/disable hardware", RequiredCommands = new[] { "Set-VmsHardware" } },
             new CapabilityDefinition { Id = "hardware.remove", Area = "Hardware", Title = "Remove hardware", RequiredCommands = new[] { "Remove-VmsHardware" } },
             new CapabilityDefinition { Id = "hardware.csv", Area = "Hardware", Title = "CSV hardware onboarding", RequiredCommands = new[] { "Add-VmsHardware", "Start-VmsHardwareScan", "Get-VmsRecordingServer", "Get-VmsHardwareDriver" } },
             new CapabilityDefinition { Id = "cameras.query", Area = "Devices", Title = "Camera inventory", RequiredCommands = new[] { "Get-VmsCamera" } },

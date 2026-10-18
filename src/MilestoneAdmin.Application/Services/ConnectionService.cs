@@ -13,6 +13,7 @@ using MilestoneAdmin.Domain.Catalog;
 using MilestoneAdmin.Domain.Classification;
 using MilestoneAdmin.Domain.Errors;
 using MilestoneAdmin.Domain.Inventory;
+using MilestoneAdmin.Domain.Scripting;
 using MilestoneAdmin.Protocol.Json;
 using MilestoneAdmin.PSTools;
 using MilestoneAdmin.PSTools.Execution;
@@ -129,7 +130,7 @@ namespace MilestoneAdmin.Application.Services
                     Operation = "Connect",
                     TargetType = "ManagementServer",
                     Target = request.ServerAddress?.ToString(),
-                    SanitizedCommand = $"Connect-Vms -ServerAddress '{request.ServerAddress}'" + (request.AuthMode == ConnectionAuthMode.CurrentWindowsUser ? string.Empty : " -Credential <prompt>") + (request.AuthMode == ConnectionAuthMode.BasicUser ? " -BasicUser" : string.Empty),
+                    SanitizedCommand = "Connect-Vms -ServerAddress " + PowerShellLiteral.Quote(request.ServerAddress?.ToString()) + (request.AuthMode == ConnectionAuthMode.CurrentWindowsUser ? string.Empty : " -Credential <prompt>") + (request.AuthMode == ConnectionAuthMode.BasicUser ? " -BasicUser" : string.Empty),
                     DurationMs = (long)(_clock.Now - started).TotalMilliseconds,
                     Result = success ? Domain.Audit.AuditResult.Success : Domain.Audit.AuditResult.Failed,
                     Error = error,
