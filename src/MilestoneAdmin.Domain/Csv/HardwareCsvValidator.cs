@@ -268,6 +268,17 @@ namespace MilestoneAdmin.Domain.Csv
             if (!Uri.TryCreate(text, UriKind.Absolute, out var u)) return false;
             if (u.Scheme != Uri.UriSchemeHttp && u.Scheme != Uri.UriSchemeHttps) return false;
             if (u.HostNameType == UriHostNameType.Unknown || string.IsNullOrEmpty(u.Host)) return false;
+            if (u.HostNameType == UriHostNameType.IPv4)
+            {
+                // System.Uri accepts shorthand forms ("10.0.0" -> 10.0.0.0, "167772161" -> 10.0.0.1); require dotted quads
+                // so a typo never silently targets a different address.
+                var authority = text.Substring(text.IndexOf("://", StringComparison.Ordinal) + 3);
+                var at = authority.IndexOf('@');
+                if (at >= 0) authority = authority.Substring(at + 1);
+                var hostText = authority.Split('/', ':', '?', '#')[0];
+                if (!string.Equals(hostText, u.Host, StringComparison.OrdinalIgnoreCase)) return false;
+            }
+
             if (u.HostNameType == UriHostNameType.Dns)
             {
                 // Reject things like "10.1.1" that parse as DNS names but are clearly malformed IPv4 addresses.

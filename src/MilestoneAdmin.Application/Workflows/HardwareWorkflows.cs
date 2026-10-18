@@ -99,6 +99,12 @@ namespace MilestoneAdmin.Application.Workflows
         }
 
         /// <summary>Parses addresses: one per line or comma-separated; IPv4 ranges "a.b.c.d-e" or "a.b.c.d-a.b.c.e"; host names; URLs.</summary>
+        private static bool IsDottedQuad(string s)
+        {
+            var parts = s.Split('.');
+            return parts.Length == 4 && parts.All(p => p.Length > 0 && p.Length <= 3 && p.All(char.IsDigit));
+        }
+
         public static AddressParseResult ParseAddresses(string text, bool https)
         {
             var r = new AddressParseResult();
@@ -110,6 +116,13 @@ namespace MilestoneAdmin.Application.Workflows
                 if (dash > 0 && !t.Contains("://") && IPAddress.TryParse(t.Substring(0, dash), out var start) && start.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
                 {
                     var endText = t.Substring(dash + 1);
+                    // IPAddress.TryParse accepts shorthand such as "10.0.0" (= 10.0.0.0); only dotted quads are ranges.
+                    if (!IsDottedQuad(t.Substring(0, dash)) || (endText.Contains(".") && !IsDottedQuad(endText)))
+                    {
+                        r.Errors.Add($"'{t}' is not a valid IPv4 range.");
+                        continue;
+                    }
+
                     var sb = start.GetAddressBytes();
                     IPAddress end;
                     if (int.TryParse(endText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var last) && last >= 0 && last <= 255)

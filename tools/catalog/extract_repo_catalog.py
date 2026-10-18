@@ -532,7 +532,7 @@ def parse_deprecations(root):
 def git_info(root):
     def run(*args):
         try:
-            return subprocess.check_output(["git", "-C", root] + list(args), text=True).strip()
+            return subprocess.check_output(["git", "-C", root] + list(args), text=True, stderr=subprocess.DEVNULL).strip()
         except Exception:
             return None
     return {"commit": run("rev-parse", "HEAD"), "commitDate": run("log", "-1", "--format=%cI"),

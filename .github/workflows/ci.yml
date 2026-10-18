@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # Everything that runs without Windows: engine/worker tests against the mock module (PowerShell 7 SDK),
+  # domain/application tests, catalog tooling tests, XAML lint and the UI C# compile check.
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: .NET tests
+        run: dotnet test tests/MilestoneAdmin.Tests -c Release
+      - name: Catalog tooling tests
+        run: python3 -m unittest discover -s tools/catalog -p "test_*.py"
+      - name: XAML lint
+        run: python3 tools/verify/xaml_lint.py .
+      - name: UI compile check (WPF reference assemblies + XAML stubs)
+        run: dotnet build tools/verify/UiCompileCheck/UiCompileCheck.csproj -c Release
+
+  # The shipped application: WPF (.NET Framework 4.8) and the x64 PowerShell 5.1 worker.
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build solution
+        run: dotnet build XProtectAdminAssistant.sln -c Release
+      - name: Check that the worker was copied next to the GUI
+        shell: pwsh
+        run: |
+          $out = 'src/MilestoneAdmin.UI/bin/Release/net48'
+          foreach ($f in 'XProtectAdminAssistant.exe', 'worker/MilestoneAdmin.Worker.exe', 'catalog/milestonepstools-catalog.json') {
+            if (-not (Test-Path (Join-Path $out $f))) { throw "Missing $f in $out" }
+          }
+          # PowerShell must come from the Windows installation (GAC), never from a shipped reference assembly.
+          if (Get-ChildItem $out -Recurse -Filter System.Management.Automation.dll) { throw 'System.Management.Automation.dll must not be shipped' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: XProtectAdminAssistant
+          path: src/MilestoneAdmin.UI/bin/Release/net48

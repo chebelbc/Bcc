@@ -12,10 +12,14 @@
     <RootNamespace>MilestoneAdmin.Worker.Engine</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="MilestoneAdmin.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\MilestoneAdmin.Protocol\MilestoneAdmin.Protocol.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-    <PackageReference Include="Microsoft.PowerShell.5.ReferenceAssemblies" Version="1.1.0" PrivateAssets="all" />
+    <!-- Compile-time only: ExcludeAssets="runtime" keeps the reference assembly out of the output, so the worker binds to the GAC copy of Windows PowerShell 5.1. -->
+    <PackageReference Include="Microsoft.PowerShell.5.ReferenceAssemblies" Version="1.1.0" PrivateAssets="all" ExcludeAssets="runtime" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.6" />
