@@ -5,7 +5,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:MilestoneAdmin.UI.ViewModels"
              xmlns:v="clr-namespace:MilestoneAdmin.UI.Views"
-             xmlns:auto="clr-namespace:MilestoneAdmin.Application.Automation;assembly=MilestoneAdmin.Application"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:AutomationViewModel, IsDesignTimeCreatable=False}">
     <Grid>
@@ -31,16 +30,16 @@
                         <TextBlock Text="1. Cameras from" Style="{StaticResource Text.Section}" />
                         <StackPanel Orientation="Horizontal">
                             <ComboBox ItemsSource="{Binding Sources}" SelectedItem="{Binding Source}" Width="200" />
-                            <TextBox Text="{Binding SourceName, UpdateSourceTrigger=PropertyChanged}" Width="260" Margin="8,0,0,0" ToolTip="Recording server or hardware name (ignored for AllCameras)" />
+                            <ComboBox ItemsSource="{Binding SourceNames}" Text="{Binding SourceName, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" IsEnabled="{Binding SourceNameEnabled}" Width="260" Margin="8,0,0,0" ToolTip="Pick the recording server or hardware (not used for AllCameras)" />
                         </StackPanel>
                         <TextBlock Text="2. Filters (all must match)" Style="{StaticResource Text.Section}" />
                         <ItemsControl ItemsSource="{Binding Filters}">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type auto:JobFilter}">
+                                <DataTemplate DataType="{x:Type vm:JobFilterRow}">
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                         <ComboBox ItemsSource="{Binding DataContext.Properties, RelativeSource={RelativeSource AncestorType=UserControl}}" SelectedItem="{Binding Property}" Width="190" />
                                         <ComboBox ItemsSource="{Binding DataContext.Operators, RelativeSource={RelativeSource AncestorType=UserControl}}" SelectedItem="{Binding Operator}" Width="120" Margin="6,0" />
-                                        <TextBox Text="{Binding Value}" Width="220" />
+                                        <ComboBox ItemsSource="{Binding ValueSuggestions}" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" IsEnabled="{Binding NeedsValue}" Width="220" ToolTip="Pick a value from your cameras, or type one" />
                                         <Button Content="Remove" Margin="6,0,0,0" Command="{Binding DataContext.RemoveFilterCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
                                     </StackPanel>
                                 </DataTemplate>
@@ -51,7 +50,7 @@
                         <StackPanel Orientation="Horizontal">
                             <ComboBox ItemsSource="{Binding Actions}" SelectedItem="{Binding Action}" Width="200" />
                             <ComboBox ItemsSource="{Binding SettableProperties}" SelectedItem="{Binding ActionProperty}" Width="190" Margin="8,0" />
-                            <TextBox Text="{Binding ActionValue, UpdateSourceTrigger=PropertyChanged}" Width="160" ToolTip="Value for SetCameraProperty (True/False or number or text)" />
+                            <ComboBox ItemsSource="{Binding ActionValueSuggestions}" Text="{Binding ActionValue, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" Width="160" ToolTip="Pick the new value (True/False, a number or text)" />
                         </StackPanel>
                         <TextBlock Text="Workflow" Style="{StaticResource Text.Section}" />
                         <ItemsControl ItemsSource="{Binding Steps}">

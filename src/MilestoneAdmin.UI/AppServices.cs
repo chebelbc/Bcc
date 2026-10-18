@@ -42,6 +42,7 @@ namespace MilestoneAdmin.UI
             Connection = new ConnectionService(ExecutorFactory, Session, Activity, Catalogs, Audit, User, Clock);
             Connection.Diagnostic += (s, e) => Diagnostics.Write(e);
             Inventory = new InventoryService(Session, Activity);
+            Lookup = new ObjectLookupService(Session, Inventory);
             Environment = new EnvironmentService();
             Reports = new ReportService(Session, Inventory);
             Search = new SearchService(Session);
@@ -69,6 +70,9 @@ namespace MilestoneAdmin.UI
         public CatalogService Catalogs { get; }
         public ConnectionService Connection { get; }
         public InventoryService Inventory { get; }
+
+        /// <summary>Choices for object pickers (cached per site).</summary>
+        public ObjectLookupService Lookup { get; }
         public EnvironmentService Environment { get; }
         public ReportService Reports { get; }
         public SearchService Search { get; }

@@ -65,7 +65,8 @@
         <DataTemplate x:Key="Field.ObjectMulti" DataType="{x:Type vm:FieldViewModel}">
             <StackPanel Margin="0,0,0,8">
                 <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
-                <ListBox ItemsSource="{Binding ObjectOptions}" MaxHeight="160">
+                <TextBox Text="{Binding OptionFilter, UpdateSourceTrigger=PropertyChanged}" ToolTip="Type to filter the list" Margin="0,2,0,2" />
+                <ListBox ItemsSource="{Binding ObjectOptionsView}" MaxHeight="200">
                     <ListBox.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:ObjectOption}">
                             <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}" />

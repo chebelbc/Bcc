@@ -151,6 +151,31 @@ namespace MilestoneAdmin.Tests.ApplicationLayer
         }
 
         [Fact]
+        public void Guid_parameters_become_object_pickers_and_send_the_selected_ids()
+        {
+            var cmd = Catalog.Find("Get-VmsDeviceStatus");
+            var form = CommandFormBuilder.Build(cmd, cmd.DefaultParameterSet, expertMode: false);
+            var rs = form.Fields.Single(f => f.Name == "RecordingServerId");
+            Assert.True(rs.PicksIds);
+            Assert.Equal(ControlKind.ObjectMultiSelector, rs.Control);
+            Assert.Equal(new[] { "RecordingServer" }, rs.ObjectTypes);
+
+            var id1 = Guid.NewGuid();
+            var id2 = Guid.NewGuid();
+            rs.Objects.Add(new RecordingServerInfo { ObjectType = "RecordingServer", Name = "RS01", Id = id1 });
+            rs.Objects.Add(new RecordingServerInfo { ObjectType = "RecordingServer", Name = "RS02", Id = id2 });
+            Assert.Empty(CommandFormBuilder.Validate(form));
+            var value = CommandFormBuilder.BuildOperation(form, whatIf: false).Pipeline.Single().Parameters.Single(p => p.Key == "RecordingServerId").Value;
+            Assert.Equal(ParameterValueKind.List, value.Kind);
+            Assert.Equal(new[] { id1.ToString(), id2.ToString() }, value.Items.Select(i => i.Literal.AsString()));
+
+            // A bare -Id is mapped from the command noun.
+            var cam = Catalog.Find("Get-VmsCamera");
+            var idForm = CommandFormBuilder.Build(cam, cam.ParameterSets.Single(s => s.Name == "Id"), expertMode: false);
+            Assert.Equal(new[] { "Camera" }, idForm.Fields.Single(f => f.Name == "Id").ObjectTypes);
+        }
+
+        [Fact]
         public void Rejects_values_that_do_not_match_the_parameter_type()
         {
             var cmd = Catalog.Find("Set-VmsHardware");

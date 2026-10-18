@@ -92,8 +92,8 @@
                                 </DataGrid.Columns>
                             </DataGrid>
                             <TextBlock Text="Add the new cameras to a device group (optional)" Style="{StaticResource Text.Label}" />
-                            <TextBox Text="{Binding DeviceGroupPath, UpdateSourceTrigger=PropertyChanged}" Width="360" HorizontalAlignment="Left" />
-                            <TextBlock Text="Example: /Site A/Lobby. Missing group levels are created. Add-VmsHardware itself does not put devices into groups." Style="{StaticResource Text.Muted}" Margin="0,2,0,8" />
+                            <ComboBox ItemsSource="{Binding DeviceGroupPaths}" Text="{Binding DeviceGroupPath, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" Width="360" HorizontalAlignment="Left" ToolTip="Pick an existing camera group or type a new path" />
+                            <TextBlock Text="Pick an existing group, or type a new path such as /Site A/Lobby. Missing group levels are created. Add-VmsHardware itself does not put devices into groups." Style="{StaticResource Text.Muted}" Margin="0,2,0,8" />
                             <StackPanel Orientation="Horizontal">
                                 <Button Content="Review camera configuration..." Command="{Binding ConfigureChannelsCommand}" Style="{StaticResource Button.Primary}" />
                                 <Button Content="Keep MilestonePSTools defaults" Command="{Binding SkipChannelsCommand}" />

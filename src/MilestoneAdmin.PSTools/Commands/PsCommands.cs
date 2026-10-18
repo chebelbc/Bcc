@@ -204,6 +204,24 @@ namespace MilestoneAdmin.PSTools.Commands
 
         public static PipelineStep SelectVmsSite(VmsObject site) => new PipelineStep("Select-VmsSite").With("Site", Ref(site));
 
+        /// <summary>
+        /// Lists objects of one type for a picker with the type's producer from classification-rules.json (a read-only
+        /// Get-* command). Device producers get -EnableFilter All so disabled devices can be picked too.
+        /// </summary>
+        public static PipelineStep Producer(string command, bool allEnableStates)
+        {
+            var s = new PipelineStep(command);
+            if (allEnableStates) s.With("EnableFilter", ParameterValue.String("All"));
+            return s;
+        }
+
+        /// <summary>All camera group paths ("/first/second"), for picking a device group.</summary>
+        public static IEnumerable<PipelineStep> CameraGroupPaths() => new[]
+        {
+            new PipelineStep("Get-VmsDeviceGroup").With("Recurse", ParameterValue.Switch()),
+            new PipelineStep("Resolve-VmsDeviceGroupPath").With("NoTypePrefix", ParameterValue.Switch())
+        };
+
         // ---------------------------------------------------------------- roles
         public static PipelineStep GetVmsRoleMember(VmsObject role) => new PipelineStep("Get-VmsRoleMember").With("Role", Refs(new[] { role }));
 
@@ -291,6 +309,8 @@ namespace MilestoneAdmin.PSTools.Commands
             yield return GetVmsSite(true);
             yield return SelectVmsSite(new GenericItem { Handle = "h5", ObjectType = "Site", Name = "Site" });
             yield return GetVmsRoleMember(new GenericItem { Handle = "h6", ObjectType = "Role", Name = "Role" });
+            yield return Producer("Get-VmsMicrophone", true);
+            foreach (var step in CameraGroupPaths()) yield return step;
         }
     }
 }

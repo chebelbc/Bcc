@@ -124,6 +124,9 @@ namespace MilestoneAdmin.PSTools
         VmsOperation PlanImportHardwareFile(string path, RecordingServerInfo recorder, string userName, SecureString password, bool updateExisting);
 
         Task<QueryResult<GenericItem>> GetRoleMembersAsync(GenericItem role, CancellationToken ct);
+
+        /// <summary>Existing camera group paths such as "/Site A/Lobby".</summary>
+        Task<List<string>> GetCameraGroupPathsAsync(CancellationToken ct);
     }
 
     /// <summary>XProtect access through MilestonePSTools. Contains all knowledge of which command does what.</summary>
@@ -357,6 +360,16 @@ namespace MilestoneAdmin.PSTools
             op.Pipeline.Add(PsCommands.ImportVmsHardware(path, recorder, userName, secret, updateExisting));
             op.Output.Properties.AddRange(HardwareProperties);
             return op;
+        }
+
+        public async Task<List<string>> GetCameraGroupPathsAsync(CancellationToken ct)
+        {
+            var op = Read("Retrieve camera groups", PsCommands.CameraGroupPaths().First(), null, "DeviceGroup");
+            op.Pipeline.Add(PsCommands.CameraGroupPaths().Last());
+            op.Output.RegisterHandles = false;
+            var r = await ExecuteAsync(op, null, ct).ConfigureAwait(false);
+            if (!r.Success) throw new VmsOperationException(r);
+            return r.Items.Select(i => i.AsString()).Where(p => !string.IsNullOrEmpty(p)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(p => p, StringComparer.OrdinalIgnoreCase).ToList();
         }
 
         public Task<QueryResult<GenericItem>> GetRoleMembersAsync(GenericItem role, CancellationToken ct) =>

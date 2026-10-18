@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MilestoneAdmin.Application.Services;
 using MilestoneAdmin.Application.Actions;
 using MilestoneAdmin.Application.Execution;
 using MilestoneAdmin.Application.Workflows;
@@ -86,6 +87,38 @@ namespace MilestoneAdmin.Tests.EndToEnd
             Assert.Contains("Device group '/Doors': 1 camera(s) added.", door.Messages);
             Assert.DoesNotContain(door.Messages, m => m.StartsWith("Failed", StringComparison.Ordinal));
             Assert.Contains(app.Audit.ReadAll(), a => a.SanitizedCommand.Contains("New-VmsDeviceGroup -Path '/Doors'") && a.SanitizedCommand.Contains("Add-VmsDeviceGroupMember -DeviceId"));
+
+            // The Add Hardware device group picker lists the groups that now exist.
+            var paths = await app.Session.Gateway.GetCameraGroupPathsAsync(None);
+            Assert.Equal(new[] { "/Doors", "/Imported cameras" }, paths);
+        }
+
+        [Fact]
+        public async Task Object_pickers_list_objects_so_no_id_has_to_be_typed()
+        {
+            await using var app = await new AppHarness().ConnectedWithInventoryAsync();
+            var lookup = new ObjectLookupService(app.Session, app.Inventory);
+
+            var (servers, p1) = await lookup.GetAsync("RecordingServer", None);
+            Assert.Null(p1);
+            Assert.Contains(servers, s => s.Name == "RS01" && s.Id != Guid.Empty);
+
+            Assert.Equal("Get-VmsRole", lookup.ProducerFor("Role"));
+            var (roles, p2) = await lookup.GetAsync("Role", None);
+            Assert.Null(p2);
+            Assert.NotEmpty(roles);
+            Assert.All(roles, r => Assert.NotEqual(Guid.Empty, r.Id));
+
+            var (users, p3) = await lookup.GetAsync("BasicUser", None);
+            Assert.Null(p3);
+            Assert.NotEmpty(users);
+
+            // Types whose producer needs a parent object or a time range are not listed.
+            Assert.Null(lookup.ProducerFor("Bookmark"));
+            Assert.Null(lookup.ProducerFor("ArchiveStorage"));
+            var (none, p4) = await lookup.GetAsync("Bookmark", None);
+            Assert.Empty(none);
+            Assert.NotNull(p4);
         }
 
         [Fact]

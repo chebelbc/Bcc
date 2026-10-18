@@ -19,7 +19,7 @@
         'Select-VmsSite', 'Get-VmsBasicUser', 'New-VmsBasicUser', 'Set-VmsBasicUser', 'Remove-VmsBasicUser', 'New-VmsRole',
         'Get-VmsRoleMember', 'Add-VmsRoleMember', 'Remove-VmsRoleMember', 'Get-VmsRule', 'Set-VmsRule', 'Get-VmsViewGroup',
         'New-VmsViewGroup', 'Set-VmsViewGroup', 'Remove-VmsViewGroup', 'Add-VmsStorage', 'Remove-VmsStorage', 'New-VmsDeviceGroup',
-        'Add-VmsDeviceGroupMember', 'Import-VmsHardware'
+        'Add-VmsDeviceGroupMember', 'Import-VmsHardware', 'Get-VmsDeviceGroup', 'Resolve-VmsDeviceGroupPath'
     )
     CmdletsToExport   = @()
     AliasesToExport   = @('Get-Camera')

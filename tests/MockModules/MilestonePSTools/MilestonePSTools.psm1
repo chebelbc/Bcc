@@ -868,6 +868,46 @@ function Add-VmsDeviceGroupMember {
     }
 }
 
+function Get-VmsDeviceGroup {
+    # Only the forms the application uses: top-level groups, or every group with -Recurse. Default -Type is Camera,
+    # as documented. Groups are kept as flat paths here, so intermediate levels are derived from them.
+    [CmdletBinding(DefaultParameterSetName = 'ByName')]
+    [RequiresVmsConnection()]
+    param(
+        [Parameter(ValueFromPipeline, ParameterSetName = 'ByName')][object] $ParentGroup,
+        [Parameter(Position = 0, ParameterSetName = 'ByName')][string] $Name = '*',
+        [Parameter(Mandatory, Position = 0, ParameterSetName = 'ByPath')][string[]] $Path,
+        [Parameter(Position = 1)][ValidateSet('Camera', 'Microphone', 'Speaker', 'Input', 'Output', 'Metadata')][string] $Type = 'Camera',
+        [Parameter()][switch] $Recurse
+    )
+    Assert-MockConnected
+    if ($Type -ne 'Camera') { return }
+    $all = New-Object System.Collections.Generic.SortedSet[string]
+    foreach ($p in $script:DeviceGroups.Keys) {
+        $parts = $p.Trim('/') -split '/'
+        for ($i = 1; $i -le $parts.Count; $i++) { [void]$all.Add('/' + ($parts[0..($i - 1)] -join '/')) }
+    }
+    foreach ($p in $all) {
+        if (-not $Recurse -and ($p.Trim('/') -split '/').Count -gt 1) { continue }
+        $leaf = ($p -split '/')[-1]
+        if ($leaf -notlike $Name) { continue }
+        New-MockItem CameraGroup @{ Name = $leaf; Path = "CameraGroup[$p]"; GroupPath = $p }
+    }
+}
+
+function Resolve-VmsDeviceGroupPath {
+    # The mock simulates only -NoTypePrefix, the form the application uses.
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline, Position = 0)][object] $Group,
+        [Parameter()][switch] $NoTypePrefix
+    )
+    process {
+        if (-not $NoTypePrefix) { throw 'Mock: Resolve-VmsDeviceGroupPath without -NoTypePrefix is not simulated.' }
+        $Group.GroupPath
+    }
+}
+
 function Import-VmsHardware {
     # Simulates the effect only: the real command parses CSV or its Export-VmsHardware workbook format.
     [CmdletBinding(DefaultParameterSetName = 'Path')]

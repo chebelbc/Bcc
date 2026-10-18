@@ -56,6 +56,9 @@ namespace MilestoneAdmin.UI.ViewModels
         public ObservableCollection<AddHardwareWorkflow.AddCandidate> Candidates { get; } = new ObservableCollection<AddHardwareWorkflow.AddCandidate>();
         public ObservableCollection<AddHardwareWorkflow.ChannelSetting> Channels { get; } = new ObservableCollection<AddHardwareWorkflow.ChannelSetting>();
         public ObservableCollection<string> StorageNames { get; } = new ObservableCollection<string>();
+
+        /// <summary>Existing camera groups, offered in the device group picker (a new path can still be typed).</summary>
+        public ObservableCollection<string> DeviceGroupPaths { get; } = new ObservableCollection<string>();
         public ObservableCollection<PrecheckItem> Checks { get; } = new ObservableCollection<PrecheckItem>();
         public Array Modes => Enum.GetValues(typeof(DiscoveryMode));
 
@@ -274,10 +277,27 @@ namespace MilestoneAdmin.UI.ViewModels
             StorageNames.Add(string.Empty);
             foreach (var s in Services.Session.Inventory.Storage.Where(s => s.RecordingServerName == Recorder.Name)) StorageNames.Add(s.Name);
             Step = 5;
+            _ = LoadDeviceGroupPathsAsync();
             ConfigureChannelsCommand = new RelayCommand(ReviewChannels);
             SkipChannelsCommand = new AsyncCommand(FinishAsync);
             Raise(nameof(ConfigureChannelsCommand));
             Raise(nameof(SkipChannelsCommand));
+        }
+
+        private async Task LoadDeviceGroupPathsAsync()
+        {
+            DeviceGroupPaths.Clear();
+            var gateway = Services.Session.Gateway;
+            if (gateway == null) return;
+            try
+            {
+                foreach (var path in await gateway.GetCameraGroupPathsAsync(CancellationToken.None)) DeviceGroupPaths.Add(path);
+            }
+            catch (Exception ex)
+            {
+                // The list is only a convenience: the path can still be typed, so a failure is logged, not shown as an error.
+                Services.Activity.Warning("Could not list the existing camera groups: " + ex.Message);
+            }
         }
 
         /// <summary>Optional camera group for the new cameras (Add-VmsHardware does not assign device groups).</summary>

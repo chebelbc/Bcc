@@ -49,11 +49,15 @@ This is an independent project. It is not affiliated with or supported by Milest
   a configuration summary, and MilestonePSTools' own `Get-VmsCameraReport`. All come from read-only operations and
   export to CSV or JSON.
 * **Automation (Job Builder):** deterministic, data-only jobs (source → filters → one action) that reuse the
-  review and apply flow.
+  review and apply flow. The recording server or hardware, filter values and the new value are picked from lists
+  built from the inventory.
 
 **Expert**
 * **Command Explorer:** all MilestonePSTools commands with documentation, risk, requirements and examples. Typed
-  forms are generated for suitable commands (Expert Mode).
+  forms are generated for suitable commands (Expert Mode). Object parameters and GUID parameters whose object type is
+  known (for example `-RecordingServerId`, `-CameraId`, `-RoleId`, or `-Id` of `Get-VmsCamera`) are shown as searchable
+  lists of the objects in the system, so IDs never have to be typed. The lists come from the inventory or from the
+  type's read-only `Get-` command (see `ObjectLookupService`).
 * **Generated PowerShell** for every reviewed change: copy, or export as `.ps1`. Passwords never appear; they
   become `Read-Host`/`Get-Credential` prompts.
 * **Activity log** (live, sanitized) and **audit log** (hash-chained, verifiable, exportable).

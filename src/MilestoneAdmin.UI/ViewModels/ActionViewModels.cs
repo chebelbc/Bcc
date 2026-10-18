@@ -92,7 +92,10 @@ namespace MilestoneAdmin.UI.ViewModels
                 Raise(nameof(TargetText));
                 Fields.Clear();
                 if (value != null)
-                    foreach (var f in value.Form.Fields) Fields.Add(new FieldViewModel(f, ObjectsFor(f)));
+                {
+                    foreach (var f in value.Form.Fields) Fields.Add(new FieldViewModel(f, _services.Settings.ExpertMode));
+                    foreach (var f in Fields) _ = f.LoadOptionsAsync(_services.Lookup);
+                }
                 Validation = null;
             }
         }
@@ -128,21 +131,6 @@ namespace MilestoneAdmin.UI.ViewModels
                            ?? QuickActionService.SelectionProblem(i.Action, count)
                            ?? (i.Action.ParentParameter != null && _parent() == null ? "Open the members of a role first." : null);
             CommandManager.InvalidateRequerySuggested();
-        }
-
-        private IEnumerable<VmsObject> ObjectsFor(FormField f)
-        {
-            var inv = _services.Session.Inventory;
-            foreach (var t in f.ObjectTypes)
-            {
-                switch (t)
-                {
-                    case "RecordingServer": foreach (var o in inv.RecordingServers) yield return o; break;
-                    case "Hardware": foreach (var o in inv.Hardware) yield return o; break;
-                    case "Camera": foreach (var o in inv.Cameras) yield return o; break;
-                    case "Storage": foreach (var o in inv.Storage) yield return o; break;
-                }
-            }
         }
 
         private void Open(QuickActionItem item)

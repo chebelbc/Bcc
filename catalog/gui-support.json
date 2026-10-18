@@ -83,6 +83,14 @@
     ],
     "Remove-VmsViewGroup": [
       "Remove View Groups"
+    ],
+    "Get-VmsDeviceGroup": [
+      "Add Hardware",
+      "Bulk Onboarding"
+    ],
+    "Resolve-VmsDeviceGroupPath": [
+      "Add Hardware",
+      "Bulk Onboarding"
     ]
   },
   "screens": {
@@ -104,41 +112,51 @@
       "System"
     ],
     "Get-VmsRecordingServer": [
-      "Recording Servers"
+      "Recording Servers",
+      "Object pickers"
     ],
     "Get-VmsHardware": [
-      "Hardware"
+      "Hardware",
+      "Object pickers"
     ],
     "Get-VmsHardwarePassword": [
       "Hardware"
     ],
     "Get-VmsCamera": [
-      "Cameras & Devices"
+      "Cameras & Devices",
+      "Object pickers"
     ],
     "Get-VmsStorage": [
-      "Storage"
+      "Storage",
+      "Object pickers"
     ],
     "Get-VmsDeviceStatus": [
       "Maintenance",
       "Reports"
     ],
     "Get-VmsRole": [
-      "Users & Roles"
+      "Users & Roles",
+      "Object pickers"
     ],
     "Get-VmsBasicUser": [
-      "Users & Roles"
+      "Users & Roles",
+      "Object pickers"
     ],
     "Get-VmsRule": [
-      "Rules & Events"
+      "Rules & Events",
+      "Object pickers"
     ],
     "Get-VmsAlarmDefinition": [
-      "Rules & Events"
+      "Rules & Events",
+      "Object pickers"
     ],
     "Get-VmsViewGroup": [
-      "Smart Client"
+      "Smart Client",
+      "Object pickers"
     ],
     "Get-VmsClientProfile": [
-      "Smart Client"
+      "Smart Client",
+      "Object pickers"
     ],
     "Get-VmsCameraReport": [
       "Reports"
@@ -151,6 +169,51 @@
     ],
     "Get-VmsRoleMember": [
       "Users & Roles"
+    ],
+    "Get-VmsMicrophone": [
+      "Object pickers"
+    ],
+    "Get-VmsSpeaker": [
+      "Object pickers"
+    ],
+    "Get-VmsMetadata": [
+      "Object pickers"
+    ],
+    "Get-VmsInput": [
+      "Object pickers"
+    ],
+    "Get-VmsOutput": [
+      "Object pickers"
+    ],
+    "Get-VmsView": [
+      "Object pickers"
+    ],
+    "Get-VmsFailoverGroup": [
+      "Object pickers"
+    ],
+    "Get-VmsFailoverRecorder": [
+      "Object pickers"
+    ],
+    "Get-VmsLoginProvider": [
+      "Object pickers"
+    ],
+    "Get-VmsLprMatchList": [
+      "Object pickers"
+    ],
+    "Get-VmsRestrictedMedia": [
+      "Object pickers"
+    ],
+    "Get-VmsTrustedIssuer": [
+      "Object pickers"
+    ],
+    "Get-UserDefinedEvent": [
+      "Object pickers"
+    ],
+    "Get-GenericEvent": [
+      "Object pickers"
+    ],
+    "Get-GenericEventDataSource": [
+      "Object pickers"
     ]
   },
   "appManagedImplemented": [

@@ -10,7 +10,7 @@ Columns:
 * **Wizard** - name of the guided workflow, if any.
 * **Risk** - Read / Write / Delete, followed by the detailed risk level used for confirmations.
 
-Summary: Docs: 85, Form: 146, No: 18, Yes: 43
+Summary: Docs: 84, Form: 130, No: 18, Yes: 60
 
 | Command | PSTools Version | GUI Supported | Wizard | Risk | Category |
 |---|---|---|---|---|---|
@@ -70,8 +70,8 @@ Summary: Docs: 85, Form: 146, No: 18, Yes: 43
 | `Get-DeviceAcl` | 25.2.61 | Form | - | Read (ReadOnly) | Users & Roles |
 | `Get-EventLine` | 25.2.61 | Form | - | Read (ReadOnly) | Rules, Events & Alarms |
 | `Get-EvidenceLock` | 25.2.61 | Form | - | Read (ReadOnly) | Media & Evidence |
-| `Get-GenericEvent` | 25.2.61 | Form | - | Read (ReadOnly) | Rules, Events & Alarms |
-| `Get-GenericEventDataSource` | 25.2.61 | Form | - | Read (ReadOnly) | Rules, Events & Alarms |
+| `Get-GenericEvent` | 25.2.61 | Yes | - | Read (ReadOnly) | Rules, Events & Alarms |
+| `Get-GenericEventDataSource` | 25.2.61 | Yes | - | Read (ReadOnly) | Rules, Events & Alarms |
 | `Get-HardwareSetting` | 25.2.61 | Form | - | Read (ReadOnly) | Hardware |
 | `Get-IAlarmClient` | 25.2.61 | Docs | - | Read (ReadOnly) | Advanced (SDK / Config API) |
 | `Get-IConfigurationService` | 25.2.61 | Docs | - | Read (ReadOnly) | Advanced (SDK / Config API) |
@@ -99,7 +99,7 @@ Summary: Docs: 85, Form: 146, No: 18, Yes: 43
 | `Get-Stream` | 25.2.61 | Form | - | Read (ReadOnly) | Camera Configuration |
 | `Get-StreamProperties` | 25.2.61 | Form | - | Read (ReadOnly) | Camera Configuration |
 | `Get-Translations` | 25.2.61 | Docs | - | Read (ReadOnly) | Advanced (SDK / Config API) |
-| `Get-UserDefinedEvent` | 25.2.61 | Form | - | Read (ReadOnly) | Rules, Events & Alarms |
+| `Get-UserDefinedEvent` | 25.2.61 | Yes | - | Read (ReadOnly) | Rules, Events & Alarms |
 | `Get-VideoDeviceStatistics` | 25.2.61 | Form | - | Read (ReadOnly) | Reports |
 | `Get-VideoSource` | 25.2.61 | Form | - | Read (ReadOnly) | Media & Evidence |
 | `Get-VmsAlarmDefinition` | 25.2.61 | Yes | - | Read (ReadOnly) | Rules, Events & Alarms |
@@ -117,38 +117,38 @@ Summary: Docs: 85, Form: 146, No: 18, Yes: 43
 | `Get-VmsDevice` | 25.2.61 | Form | - | Read (ReadOnly) | Cameras & Devices |
 | `Get-VmsDeviceEvent` | 25.2.61 | Form | - | Read (ReadOnly) | Camera Configuration |
 | `Get-VmsDeviceGeneralSetting` | 25.2.61 | Form | - | Read (ReadOnly) | Camera Configuration |
-| `Get-VmsDeviceGroup` | 25.2.61 | Form | - | Read (ReadOnly) | Cameras & Devices |
+| `Get-VmsDeviceGroup` | 25.2.61 | Yes | Add Hardware, Bulk Onboarding | Read (ReadOnly) | Cameras & Devices |
 | `Get-VmsDeviceGroupMember` | 25.2.61 | Form | - | Read (ReadOnly) | Cameras & Devices |
 | `Get-VmsDeviceStatus` | 25.2.61 | Yes | - | Read (ReadOnly) | Maintenance & Status |
 | `Get-VmsDeviceStreamSetting` | 25.2.61 | Form | - | Read (ReadOnly) | Camera Configuration |
-| `Get-VmsFailoverGroup` | 25.2.61 | Form | - | Read (ReadOnly) | System |
-| `Get-VmsFailoverRecorder` | 25.2.61 | Form | - | Read (ReadOnly) | System |
+| `Get-VmsFailoverGroup` | 25.2.61 | Yes | - | Read (ReadOnly) | System |
+| `Get-VmsFailoverRecorder` | 25.2.61 | Yes | - | Read (ReadOnly) | System |
 | `Get-VmsHardware` | 25.2.61 | Yes | - | Read (ReadOnly) | Hardware |
 | `Get-VmsHardwareDriver` | 25.2.61 | Yes | Add Hardware, Bulk Onboarding | Read (ReadOnly) | Hardware |
 | `Get-VmsHardwarePassword` | 25.2.61 | Yes | - | Read (Sensitive) | Hardware |
-| `Get-VmsInput` | 25.2.61 | Form | - | Read (ReadOnly) | Cameras & Devices |
+| `Get-VmsInput` | 25.2.61 | Yes | - | Read (ReadOnly) | Cameras & Devices |
 | `Get-VmsIServiceRegistrationService` | 25.2.61 | Docs | - | Read (ReadOnly) | Advanced (SDK / Config API) |
 | `Get-VmsLicenseDetails` | 25.2.61 | Form | - | Read (ReadOnly) | Licensing |
 | `Get-VmsLicensedProducts` | 25.2.61 | Form | - | Read (ReadOnly) | Licensing |
 | `Get-VmsLicenseInfo` | 25.2.61 | Form | - | Read (ReadOnly) | Licensing |
 | `Get-VmsLicenseOverview` | 25.2.61 | Yes | - | Read (ReadOnly) | Licensing |
 | `Get-VmsLog` | 25.2.61 | Form | - | Read (ReadOnly) | Maintenance & Status |
-| `Get-VmsLoginProvider` | 25.2.61 | Form | - | Read (ReadOnly) | Users & Roles |
+| `Get-VmsLoginProvider` | 25.2.61 | Yes | - | Read (ReadOnly) | Users & Roles |
 | `Get-VmsLoginProviderClaim` | 25.2.61 | Form | - | Read (ReadOnly) | Users & Roles |
 | `Get-VmsLprEvent` | 25.2.61 | Form | - | Read (ReadOnly) | License Plate Recognition |
-| `Get-VmsLprMatchList` | 25.2.61 | Form | - | Read (ReadOnly) | License Plate Recognition |
+| `Get-VmsLprMatchList` | 25.2.61 | Yes | - | Read (ReadOnly) | License Plate Recognition |
 | `Get-VmsLprMatchListEntry` | 25.2.61 | Form | - | Read (ReadOnly) | License Plate Recognition |
 | `Get-VmsManagementServer` | 25.2.61 | Yes | - | Read (ReadOnly) | System |
-| `Get-VmsMetadata` | 25.2.61 | Form | - | Read (ReadOnly) | Cameras & Devices |
+| `Get-VmsMetadata` | 25.2.61 | Yes | - | Read (ReadOnly) | Cameras & Devices |
 | `Get-VmsMetadataLiveRecord` | 25.2.61 | Form | - | Read (ReadOnly) | Media & Evidence |
 | `Get-VmsMetadataRecord` | 25.2.61 | Form | - | Read (ReadOnly) | Media & Evidence |
-| `Get-VmsMicrophone` | 25.2.61 | Form | - | Read (ReadOnly) | Cameras & Devices |
+| `Get-VmsMicrophone` | 25.2.61 | Yes | - | Read (ReadOnly) | Cameras & Devices |
 | `Get-VmsModuleConfig` | 25.2.61 | Form | - | Read (ReadOnly) | Maintenance & Status |
 | `Get-VmsOpenIdConfig` | 25.2.61 | Form | - | Read (ReadOnly) | Connection |
-| `Get-VmsOutput` | 25.2.61 | Form | - | Read (ReadOnly) | Cameras & Devices |
+| `Get-VmsOutput` | 25.2.61 | Yes | - | Read (ReadOnly) | Cameras & Devices |
 | `Get-VmsParentItem` | 25.2.61 | Form | - | Read (ReadOnly) | Cameras & Devices |
 | `Get-VmsRecordingServer` | 25.2.61 | Yes | - | Read (ReadOnly) | System |
-| `Get-VmsRestrictedMedia` | 25.2.61 | Form | - | Read (ReadOnly) | Media & Evidence |
+| `Get-VmsRestrictedMedia` | 25.2.61 | Yes | - | Read (ReadOnly) | Media & Evidence |
 | `Get-VmsRole` | 25.2.61 | Yes | - | Read (ReadOnly) | Users & Roles |
 | `Get-VmsRoleClaim` | 25.2.61 | Form | - | Read (ReadOnly) | Users & Roles |
 | `Get-VmsRoleMember` | 25.2.61 | Yes | - | Read (ReadOnly) | Users & Roles |
@@ -156,14 +156,14 @@ Summary: Docs: 85, Form: 146, No: 18, Yes: 43
 | `Get-VmsRule` | 25.2.61 | Yes | - | Read (ReadOnly) | Rules, Events & Alarms |
 | `Get-VmsSite` | 25.2.61 | Yes | - | Read (ReadOnly) | System |
 | `Get-VmsSiteInfo` | 25.2.61 | Form | - | Read (ReadOnly) | System |
-| `Get-VmsSpeaker` | 25.2.61 | Form | - | Read (ReadOnly) | Cameras & Devices |
+| `Get-VmsSpeaker` | 25.2.61 | Yes | - | Read (ReadOnly) | Cameras & Devices |
 | `Get-VmsStorage` | 25.2.61 | Yes | - | Read (ReadOnly) | Storage |
 | `Get-VmsStorageRetention` | 25.2.61 | Form | - | Read (ReadOnly) | Storage |
 | `Get-VmsSystemLicense` | 25.2.61 | Form | - | Read (ReadOnly) | Licensing |
 | `Get-VmsToken` | 25.2.61 | Docs | - | Read (Sensitive) | Connection |
-| `Get-VmsTrustedIssuer` | 25.2.61 | Form | - | Read (ReadOnly) | Users & Roles |
+| `Get-VmsTrustedIssuer` | 25.2.61 | Yes | - | Read (ReadOnly) | Users & Roles |
 | `Get-VmsVideoOSItem` | 25.2.61 | Docs | - | Read (ReadOnly) | Advanced (SDK / Config API) |
-| `Get-VmsView` | 25.2.61 | Form | - | Read (ReadOnly) | Smart Client |
+| `Get-VmsView` | 25.2.61 | Yes | - | Read (ReadOnly) | Smart Client |
 | `Get-VmsViewGroup` | 25.2.61 | Yes | - | Read (ReadOnly) | Smart Client |
 | `Get-VmsViewGroupAcl` | 25.2.61 | Form | - | Read (ReadOnly) | Smart Client |
 | `Get-VmsVmoClient` | 25.2.61 | Docs | - | Read (ReadOnly) | Advanced (SDK / Config API) |
@@ -230,7 +230,7 @@ Summary: Docs: 85, Form: 146, No: 18, Yes: 43
 | `Remove-VmsViewGroup` | 25.2.61 | Yes | Remove View Groups | Delete (Delete) | Smart Client |
 | `Remove-VmsWebhook` | 25.2.61 | Docs | - | Delete (Delete) | Rules, Events & Alarms |
 | `Resize-Image` | 25.2.61 | Docs | - | Read (ReadOnly) | Media & Evidence |
-| `Resolve-VmsDeviceGroupPath` | 25.2.61 | Docs | - | Read (ReadOnly) | Cameras & Devices |
+| `Resolve-VmsDeviceGroupPath` | 25.2.61 | Yes | Add Hardware, Bulk Onboarding | Read (ReadOnly) | Cameras & Devices |
 | `Save-VmsConnectionProfile` | 25.2.61 | No | - | Write (LocalState) | Connection |
 | `Select-Camera` | 25.2.61 | Docs | - | Read (ReadOnly) | Cameras & Devices |
 | `Select-VideoOSItem` | 25.2.61 | Docs | - | Read (ReadOnly) | Advanced (SDK / Config API) |

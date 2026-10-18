@@ -17,14 +17,23 @@ namespace MilestoneAdmin.Application.CommandExplorer
     public sealed class FormField
     {
         public CatalogParameter Parameter { get; set; }
-        public ControlKind Control => Parameter.Control;
+
+        /// <summary>
+        /// Object types for a GUID parameter that identifies objects (e.g. -CameraId). The field is then shown as an
+        /// object picker and the selected objects' Ids are sent, so nobody has to type a GUID.
+        /// </summary>
+        public List<string> IdObjectTypes { get; } = new List<string>();
+
+        public bool PicksIds => IdObjectTypes.Count > 0;
+
+        public ControlKind Control => !PicksIds ? Parameter.Control : Parameter.Control == ControlKind.GuidList ? ControlKind.ObjectMultiSelector : ControlKind.ObjectSelector;
         public string Name => Parameter.Name;
         public string Label { get; set; }
         public string Description => Parameter.Description;
         public bool Mandatory { get; set; }
         public string TypeName => Parameter.Type;
         public IReadOnlyList<string> AcceptedValues => Parameter.AcceptedValues;
-        public IReadOnlyList<string> ObjectTypes => Parameter.ObjectTypes;
+        public IReadOnlyList<string> ObjectTypes => PicksIds ? (IReadOnlyList<string>)IdObjectTypes : Parameter.ObjectTypes;
         public bool IsSecret => Parameter.IsSecret;
 
         // Values (set by the UI)
@@ -87,7 +96,11 @@ namespace MilestoneAdmin.Application.CommandExplorer
             var setName = set?.Name ?? "__AllParameterSets";
             var parameters = set == null ? command.Parameters : command.Parameters.Where(p => p.InSet(setName));
             foreach (var p in parameters.OrderByDescending(p => p.IsMandatoryIn(setName)).ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase))
-                form.Fields.Add(new FormField { Parameter = p, Label = Humanize(p.Name), Mandatory = p.IsMandatoryIn(setName) });
+            {
+                var field = new FormField { Parameter = p, Label = Humanize(p.Name), Mandatory = p.IsMandatoryIn(setName) };
+                field.IdObjectTypes.AddRange(IdObjectTypesFor(command, p));
+                form.Fields.Add(field);
+            }
             form.ExecutionBlockedReason = BlockedReason(command, form, expertMode);
             return form;
         }
@@ -110,6 +123,35 @@ namespace MilestoneAdmin.Application.CommandExplorer
             if (unsupported.Count > 0) return "Mandatory parameters cannot be entered in a form: " + string.Join(", ", unsupported) + ". Choose another parameter set.";
             if (c.Requirements.InteractiveSession) return "This command requires an interactive session.";
             return null;
+        }
+
+        /// <summary>Id parameter name -> object types the Id refers to. "Id" alone refers to the command's own noun.</summary>
+        private static readonly Dictionary<string, string[]> IdParameterTypes = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "CameraId", new[] { "Camera" } }, { "CameraIds", new[] { "Camera" } },
+            { "MicrophoneIds", new[] { "Microphone" } }, { "SpeakerIds", new[] { "Speaker" } },
+            { "RecordingServerId", new[] { "RecordingServer" } }, { "RecorderId", new[] { "RecordingServer" } },
+            { "HardwareId", new[] { "Hardware" } }, { "RoleId", new[] { "Role" } },
+            { "DeviceId", new[] { "Camera", "Microphone", "Speaker", "Metadata", "InputEvent", "Output" } },
+            { "DeviceIds", new[] { "Camera", "Microphone", "Speaker", "Metadata", "InputEvent", "Output" } },
+            { "IncludeDeviceId", new[] { "Camera" } }, { "ExcludeDeviceId", new[] { "Camera" } }
+        };
+
+        /// <summary>Command noun -> object type, for "-Id" parameters of commands that work on one kind of object.</summary>
+        private static readonly Dictionary<string, string> NounTypes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "VmsCamera", "Camera" }, { "VmsHardware", "Hardware" }, { "VmsRecordingServer", "RecordingServer" }, { "VmsMicrophone", "Microphone" },
+            { "VmsSpeaker", "Speaker" }, { "VmsMetadata", "Metadata" }, { "VmsInput", "InputEvent" }, { "VmsOutput", "Output" }, { "VmsRole", "Role" },
+            { "VmsView", "View" }, { "VmsViewGroup", "ViewGroup" }, { "VmsClientProfile", "ClientProfile" }, { "VmsFailoverGroup", "FailoverGroup" },
+            { "VmsFailoverRecorder", "FailoverRecorder" }, { "VmsRule", "Rule" }, { "UserDefinedEvent", "UserDefinedEvent" }
+        };
+
+        public static IEnumerable<string> IdObjectTypesFor(CatalogCommand command, CatalogParameter p)
+        {
+            if (p.Control != ControlKind.Guid && p.Control != ControlKind.GuidList) return Array.Empty<string>();
+            if (IdParameterTypes.TryGetValue(p.Name, out var types)) return types;
+            if (string.Equals(p.Name, "Id", StringComparison.OrdinalIgnoreCase) && NounTypes.TryGetValue(command.Noun ?? string.Empty, out var t)) return new[] { t };
+            return Array.Empty<string>();
         }
 
         public static string Humanize(string name)
@@ -216,6 +258,10 @@ namespace MilestoneAdmin.Application.CommandExplorer
                     return ParameterValue.Secret(op.AddSecret(f.Secret, f.Label));
                 case ControlKind.Credential:
                     return ParameterValue.Credential(f.UserName, op.AddSecret(f.Secret, $"{f.Label} for {f.UserName}"));
+                case ControlKind.ObjectSelector when f.PicksIds:
+                    return ParameterValue.Guid(f.Objects[0].Id);
+                case ControlKind.ObjectMultiSelector when f.PicksIds:
+                    return ParameterValue.List(f.Objects.Select(o => ParameterValue.Guid(o.Id)));
                 case ControlKind.ObjectSelector:
                     return PsCommands.Ref(f.Objects[0]);
                 case ControlKind.ObjectMultiSelector:

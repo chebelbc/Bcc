@@ -53,23 +53,56 @@ namespace MilestoneAdmin.UI.ViewModels
         public bool IsChecked { get => _isChecked; set => Set(ref _isChecked, value); }
     }
 
-    /// <summary>View model for one generated form control.</summary>
+    /// <summary>
+    /// View model for one generated form control. Object and Id parameters are pickers: their choices are loaded from the
+    /// connected system (<see cref="LoadOptionsAsync"/>), so nobody types names or GUIDs.
+    /// </summary>
     public sealed class FieldViewModel : ObservableObject, ISecretSink
     {
-        public FieldViewModel(FormField field, IEnumerable<VmsObject> objects)
+        private readonly bool _showSyntax;
+        private string _optionFilter;
+        private string _optionsStatus;
+
+        public FieldViewModel(FormField field, bool showSyntax)
         {
             Field = field;
-            foreach (var o in objects) ObjectOptions.Add(new ObjectOption { Object = o, Label = o is CameraInfo c ? $"{c.Name} ({c.HardwareName})" : o is HardwareInfo h ? $"{h.Name} ({h.Address})" : o.Name });
+            _showSyntax = showSyntax;
             foreach (var v in field.AcceptedValues) Options.Add(new ObjectOption { Label = v });
+            ObjectOptionsView = CollectionViewSource.GetDefaultView(ObjectOptions);
+            ObjectOptionsView.Filter = o => string.IsNullOrWhiteSpace(OptionFilter) || ((ObjectOption)o).IsChecked ||
+                                            ((ObjectOption)o).Label.IndexOf(OptionFilter, StringComparison.CurrentCultureIgnoreCase) >= 0;
         }
 
         public FormField Field { get; }
         public string Label => Field.Label + (Field.Mandatory ? " *" : string.Empty);
-        public string Help => $"-{Field.Name} <{Field.TypeName}>" + (string.IsNullOrWhiteSpace(Field.Description) ? string.Empty : " · " + Field.Description.Replace("\n", " "));
+
+        /// <summary>Plain description; the PowerShell parameter syntax is shown in Expert Mode only.</summary>
+        public string Help
+        {
+            get
+            {
+                var desc = string.IsNullOrWhiteSpace(Field.Description) ? string.Empty : Field.Description.Replace("\n", " ");
+                return _showSyntax ? $"-{Field.Name} <{Field.TypeName}>" + (desc.Length > 0 ? " · " + desc : string.Empty) : desc;
+            }
+        }
+
         public ControlKind Control => Field.Control;
         public ObservableCollection<ObjectOption> ObjectOptions { get; } = new ObservableCollection<ObjectOption>();
+        public ICollectionView ObjectOptionsView { get; }
         public ObservableCollection<ObjectOption> Options { get; } = new ObservableCollection<ObjectOption>();
-        public string ObjectTypesText => Field.ObjectTypes.Count == 0 ? string.Empty : "Choose: " + string.Join(", ", Field.ObjectTypes) + (ObjectOptions.Count == 0 ? " (load the inventory first)" : string.Empty);
+        public bool IsPicker => Field.ObjectTypes.Count > 0;
+
+        public string ObjectTypesText => _optionsStatus ?? (Field.ObjectTypes.Count == 0 ? string.Empty : "Choose: " + string.Join(", ", Field.ObjectTypes.Select(Friendly)));
+
+        /// <summary>Search text for long object lists (cameras, users...). Checked items stay visible.</summary>
+        public string OptionFilter
+        {
+            get => _optionFilter;
+            set
+            {
+                if (Set(ref _optionFilter, value)) ObjectOptionsView.Refresh();
+            }
+        }
 
         public string Text { get => Field.Text; set { Field.Text = value; Raise(); } }
         public bool? Flag { get => Field.Flag; set { Field.Flag = value; Raise(); } }
@@ -87,6 +120,35 @@ namespace MilestoneAdmin.UI.ViewModels
         }
 
         public void SetSecret(SecureString value) => Field.Secret = value;
+
+        private static string Friendly(string type) =>
+            ClassificationRules.Embedded.ObjectTypes.TryGetValue(type, out var d) && !string.IsNullOrEmpty(d.Label) ? d.Label : CommandFormBuilder.Humanize(type);
+
+        private static string LabelFor(VmsObject o) =>
+            o is CameraInfo c ? $"{c.Name} ({c.HardwareName})" : o is HardwareInfo h ? $"{h.Name} ({h.Address})" : o is StorageInfo st ? $"{st.Name} ({st.RecordingServerName})" : o.Name;
+
+        /// <summary>Fills the picker with the objects of the field's types from the connected system.</summary>
+        public async Task LoadOptionsAsync(Application.Services.ObjectLookupService lookup)
+        {
+            if (!IsPicker) return;
+            _optionsStatus = "Loading choices...";
+            Raise(nameof(ObjectTypesText));
+            var problems = new List<string>();
+            var keep = new HashSet<VmsObject>(Field.Objects);
+            ObjectOptions.Clear();
+            foreach (var t in Field.ObjectTypes)
+            {
+                var (items, problem) = await lookup.GetAsync(t, CancellationToken.None);
+                if (problem != null) problems.Add(problem);
+                foreach (var o in items) ObjectOptions.Add(new ObjectOption { Object = o, Label = LabelFor(o), IsChecked = keep.Contains(o) });
+            }
+
+            _optionsStatus = ObjectOptions.Count == 0
+                ? (problems.Count > 0 ? string.Join(" ", problems.Distinct()) : "Nothing to choose from on this system.")
+                : null;
+            Raise(nameof(ObjectTypesText));
+            Raise(nameof(SelectedObject));
+        }
 
         /// <summary>Copy selections from the option lists into the form field before validation.</summary>
         public void Commit()
@@ -246,21 +308,6 @@ namespace MilestoneAdmin.UI.ViewModels
              r.Command.Aliases.Any(a => a.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0) ||
              (SearchText.Length >= 4 && r.Synopsis.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0));
 
-        private IEnumerable<VmsObject> ObjectsFor(FormField f)
-        {
-            var inv = Services.Session.Inventory;
-            foreach (var t in f.ObjectTypes)
-            {
-                switch (t)
-                {
-                    case "RecordingServer": foreach (var o in inv.RecordingServers) yield return o; break;
-                    case "Hardware": foreach (var o in inv.Hardware) yield return o; break;
-                    case "Camera": foreach (var o in inv.Cameras) yield return o; break;
-                    case "Storage": foreach (var o in inv.Storage) yield return o; break;
-                }
-            }
-        }
-
         private void BuildForm()
         {
             Fields.Clear();
@@ -273,8 +320,9 @@ namespace MilestoneAdmin.UI.ViewModels
             }
 
             Form = CommandFormBuilder.Build(Selected.Command, SelectedSet, ExpertMode);
-            foreach (var f in Form.Fields) Fields.Add(new FieldViewModel(f, ObjectsFor(f)));
+            foreach (var f in Form.Fields) Fields.Add(new FieldViewModel(f, ExpertMode));
             UpdateScript();
+            foreach (var f in Fields) _ = f.LoadOptionsAsync(Services.Lookup);
         }
 
         private void Commit()
