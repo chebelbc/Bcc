@@ -5,3 +5,4 @@
 *.sln text eol=crlf
 *.cs text
 *.xaml text
+*.iss text eol=crlf
