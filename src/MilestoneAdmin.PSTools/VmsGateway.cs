@@ -111,6 +111,19 @@ namespace MilestoneAdmin.PSTools
         VmsOperation PlanSetDeviceStorage(CameraInfo camera, string storageName);
 
         VmsOperation PlanRevealHardwarePassword(HardwareInfo hardware);
+
+        /// <summary>Sites of a Milestone Federated Architecture: the selected site, or all available sites.</summary>
+        Task<QueryResult<GenericItem>> GetSitesAsync(bool listAvailable, CancellationToken ct);
+
+        VmsOperation PlanSelectSite(GenericItem site);
+
+        /// <summary>Puts cameras into the camera group at <paramref name="path"/>, creating missing group levels.</summary>
+        VmsOperation PlanAssignDeviceGroup(string path, IReadOnlyList<CameraInfo> cameras);
+
+        /// <summary>Import-VmsHardware with a file MilestonePSTools parses itself (its Export-VmsHardware workbook format).</summary>
+        VmsOperation PlanImportHardwareFile(string path, RecordingServerInfo recorder, string userName, SecureString password, bool updateExisting);
+
+        Task<QueryResult<GenericItem>> GetRoleMembersAsync(GenericItem role, CancellationToken ct);
     }
 
     /// <summary>XProtect access through MilestonePSTools. Contains all knowledge of which command does what.</summary>
@@ -305,6 +318,49 @@ namespace MilestoneAdmin.PSTools
             op.Output.RegisterHandles = false;
             return op;
         }
+
+        public Task<QueryResult<GenericItem>> GetSitesAsync(bool listAvailable, CancellationToken ct) =>
+            QueryAsync(Read(listAvailable ? "Retrieve available sites" : "Retrieve the selected site", PsCommands.GetVmsSite(listAvailable), new[] { "Name" }, "Site"),
+                o => DtoMapper.Generic(o, "Site"), null, ct);
+
+        public VmsOperation PlanSelectSite(GenericItem site)
+        {
+            var op = new VmsOperation { Title = "Select site", Target = site.Name, TargetType = "Site", Risk = RiskLevel.Session };
+            op.Pipeline.Add(PsCommands.SelectVmsSite(site));
+            op.Output.RegisterHandles = false;
+            return op;
+        }
+
+        public VmsOperation PlanAssignDeviceGroup(string path, IReadOnlyList<CameraInfo> cameras)
+        {
+            var op = new VmsOperation
+            {
+                Title = $"Add {cameras.Count} camera(s) to device group '{path}'", Target = path, TargetType = "DeviceGroup",
+                Risk = RiskLevel.Create, AllowStateChange = true, TimeoutSeconds = 900
+            };
+            op.Pipeline.Add(PsCommands.NewVmsDeviceGroupPath(path));
+            op.Pipeline.Add(PsCommands.AddVmsDeviceGroupMember(cameras.Select(c => c.Id)));
+            op.Output.RegisterHandles = false;
+            return op;
+        }
+
+        public VmsOperation PlanImportHardwareFile(string path, RecordingServerInfo recorder, string userName, SecureString password, bool updateExisting)
+        {
+            var op = new VmsOperation
+            {
+                Title = updateExisting ? "Import and update hardware (Import-VmsHardware)" : "Import hardware (Import-VmsHardware)",
+                Target = System.IO.Path.GetFileName(path), TargetType = "Hardware",
+                Risk = updateExisting ? RiskLevel.Modify : RiskLevel.Create, AllowStateChange = true, TimeoutSeconds = 7200
+            };
+            string secret = null;
+            if (password != null && password.Length > 0) secret = op.AddSecret(password, $"Device password for '{userName}'");
+            op.Pipeline.Add(PsCommands.ImportVmsHardware(path, recorder, userName, secret, updateExisting));
+            op.Output.Properties.AddRange(HardwareProperties);
+            return op;
+        }
+
+        public Task<QueryResult<GenericItem>> GetRoleMembersAsync(GenericItem role, CancellationToken ct) =>
+            QueryAsync(Read($"Retrieve members of role '{role.Name}'", PsCommands.GetVmsRoleMember(role), null, "User"), o => DtoMapper.Generic(o, "User"), null, ct);
     }
 
     public sealed class VmsOperationException : Exception

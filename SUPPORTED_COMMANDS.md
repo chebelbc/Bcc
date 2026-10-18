@@ -10,7 +10,7 @@ Columns:
 * **Wizard** - name of the guided workflow, if any.
 * **Risk** - Read / Write / Delete, followed by the detailed risk level used for confirmations.
 
-Summary: Docs: 90, Form: 158, No: 19, Yes: 25
+Summary: Docs: 85, Form: 146, No: 18, Yes: 43
 
 | Command | PSTools Version | GUI Supported | Wizard | Risk | Category |
 |---|---|---|---|---|---|
@@ -21,14 +21,14 @@ Summary: Docs: 90, Form: 158, No: 19, Yes: 25
 | `Add-Stream` | 25.2.61 | Form | - | Write (Create) | Camera Configuration |
 | `Add-UserDefinedEvent` | 25.2.61 | Form | - | Write (Create) | Rules, Events & Alarms |
 | `Add-VmsArchiveStorage` | 25.2.61 | Form | - | Write (Create) | Storage |
-| `Add-VmsDeviceGroupMember` | 25.2.61 | Form | - | Write (Create) | Cameras & Devices |
+| `Add-VmsDeviceGroupMember` | 25.2.61 | Yes | Add Hardware, Bulk Onboarding | Write (Create) | Cameras & Devices |
 | `Add-VmsFailoverRecorder` | 25.2.61 | Form | - | Write (Create) | System |
-| `Add-VmsHardware` | 25.2.61 | Yes | Add Hardware, CSV Onboarding | Write (Create) | Hardware |
+| `Add-VmsHardware` | 25.2.61 | Yes | Add Hardware, Bulk Onboarding | Write (Create) | Hardware |
 | `Add-VmsLoginProviderClaim` | 25.2.61 | Form | - | Write (Create) | Users & Roles |
 | `Add-VmsLprMatchListEntry` | 25.2.61 | Form | - | Write (Create) | License Plate Recognition |
 | `Add-VmsRoleClaim` | 25.2.61 | Form | - | Write (Create) | Users & Roles |
-| `Add-VmsRoleMember` | 25.2.61 | Form | - | Write (Create) | Users & Roles |
-| `Add-VmsStorage` | 25.2.61 | Form | - | Write (Create) | Storage |
+| `Add-VmsRoleMember` | 25.2.61 | Yes | Add Members to Role | Write (Create) | Users & Roles |
+| `Add-VmsStorage` | 25.2.61 | Yes | Add Recording Storage | Write (Create) | Storage |
 | `Assert-VmsLicensedFeature` | 25.2.61 | Form | - | Read (ReadOnly) | Licensing |
 | `Assert-VmsRequirementsMet` | 25.2.61 | Form | - | Read (ReadOnly) | Maintenance & Status |
 | `Clear-VmsCache` | 25.2.61 | Form | - | Read (Session) | Connection |
@@ -124,7 +124,7 @@ Summary: Docs: 90, Form: 158, No: 19, Yes: 25
 | `Get-VmsFailoverGroup` | 25.2.61 | Form | - | Read (ReadOnly) | System |
 | `Get-VmsFailoverRecorder` | 25.2.61 | Form | - | Read (ReadOnly) | System |
 | `Get-VmsHardware` | 25.2.61 | Yes | - | Read (ReadOnly) | Hardware |
-| `Get-VmsHardwareDriver` | 25.2.61 | Yes | Add Hardware, CSV Onboarding | Read (ReadOnly) | Hardware |
+| `Get-VmsHardwareDriver` | 25.2.61 | Yes | Add Hardware, Bulk Onboarding | Read (ReadOnly) | Hardware |
 | `Get-VmsHardwarePassword` | 25.2.61 | Yes | - | Read (Sensitive) | Hardware |
 | `Get-VmsInput` | 25.2.61 | Form | - | Read (ReadOnly) | Cameras & Devices |
 | `Get-VmsIServiceRegistrationService` | 25.2.61 | Docs | - | Read (ReadOnly) | Advanced (SDK / Config API) |
@@ -151,10 +151,10 @@ Summary: Docs: 90, Form: 158, No: 19, Yes: 25
 | `Get-VmsRestrictedMedia` | 25.2.61 | Form | - | Read (ReadOnly) | Media & Evidence |
 | `Get-VmsRole` | 25.2.61 | Yes | - | Read (ReadOnly) | Users & Roles |
 | `Get-VmsRoleClaim` | 25.2.61 | Form | - | Read (ReadOnly) | Users & Roles |
-| `Get-VmsRoleMember` | 25.2.61 | Form | - | Read (ReadOnly) | Users & Roles |
+| `Get-VmsRoleMember` | 25.2.61 | Yes | - | Read (ReadOnly) | Users & Roles |
 | `Get-VmsRoleOverallSecurity` | 25.2.61 | Form | - | Read (ReadOnly) | Users & Roles |
 | `Get-VmsRule` | 25.2.61 | Yes | - | Read (ReadOnly) | Rules, Events & Alarms |
-| `Get-VmsSite` | 25.2.61 | Form | - | Read (ReadOnly) | System |
+| `Get-VmsSite` | 25.2.61 | Yes | - | Read (ReadOnly) | System |
 | `Get-VmsSiteInfo` | 25.2.61 | Form | - | Read (ReadOnly) | System |
 | `Get-VmsSpeaker` | 25.2.61 | Form | - | Read (ReadOnly) | Cameras & Devices |
 | `Get-VmsStorage` | 25.2.61 | Yes | - | Read (ReadOnly) | Storage |
@@ -170,7 +170,7 @@ Summary: Docs: 90, Form: 158, No: 19, Yes: 25
 | `Get-VmsWebhook` | 25.2.61 | Form | - | Read (ReadOnly) | Rules, Events & Alarms |
 | `Get-WhoIsOnline` | 25.2.61 | Form | - | Read (ReadOnly) | Maintenance & Status |
 | `Import-VmsClientProfile` | 25.2.61 | Form | - | Write (Create) | Smart Client |
-| `Import-VmsHardware` | 25.2.61 | Form | - | Write (Create) | Hardware |
+| `Import-VmsHardware` | 25.2.61 | Yes | Bulk Onboarding (MilestonePSTools workbook) | Write (Create) | Hardware |
 | `Import-VmsLicense` | 25.2.61 | Docs | - | Write (HighImpact) | Licensing |
 | `Import-VmsLprMatchList` | 25.2.61 | Form | - | Write (Create) | License Plate Recognition |
 | `Import-VmsRole` | 25.2.61 | Form | - | Write (Create) | Users & Roles |
@@ -186,18 +186,18 @@ Summary: Docs: 90, Form: 158, No: 19, Yes: 25
 | `New-AlarmCondition` | 25.2.61 | Docs | - | Read (ReadOnly) | Rules, Events & Alarms |
 | `New-AlarmOrder` | 25.2.61 | Form | - | Read (ReadOnly) | Rules, Events & Alarms |
 | `New-VmsAlarmDefinition` | 25.2.61 | Form | - | Write (Create) | Rules, Events & Alarms |
-| `New-VmsBasicUser` | 25.2.61 | Form | - | Write (Create) | Users & Roles |
+| `New-VmsBasicUser` | 25.2.61 | Yes | New Basic User | Write (Create) | Users & Roles |
 | `New-VmsClientProfile` | 25.2.61 | Form | - | Write (Create) | Smart Client |
-| `New-VmsDeviceGroup` | 25.2.61 | Form | - | Write (Create) | Cameras & Devices |
+| `New-VmsDeviceGroup` | 25.2.61 | Yes | Add Hardware, Bulk Onboarding | Write (Create) | Cameras & Devices |
 | `New-VmsFailoverGroup` | 25.2.61 | Form | - | Write (Create) | System |
 | `New-VmsLoginProvider` | 25.2.61 | Form | - | Write (Create) | Users & Roles |
 | `New-VmsLprMatchList` | 25.2.61 | Form | - | Write (Create) | License Plate Recognition |
 | `New-VmsRestrictedMedia` | 25.2.61 | Form | - | Write (Create) | Media & Evidence |
-| `New-VmsRole` | 25.2.61 | Form | - | Write (Create) | Users & Roles |
+| `New-VmsRole` | 25.2.61 | Yes | New Role | Write (Create) | Users & Roles |
 | `New-VmsRule` | 25.2.61 | Docs | - | Write (Create) | Rules, Events & Alarms |
 | `New-VmsTrustedIssuer` | 25.2.61 | Form | - | Write (Create) | Users & Roles |
 | `New-VmsView` | 25.2.61 | Form | - | Write (Create) | Smart Client |
-| `New-VmsViewGroup` | 25.2.61 | Form | - | Write (Create) | Smart Client |
+| `New-VmsViewGroup` | 25.2.61 | Yes | New View Group | Write (Create) | Smart Client |
 | `New-VmsWebhook` | 25.2.61 | Form | - | Write (Create) | Rules, Events & Alarms |
 | `Remove-Bookmark` | 25.2.61 | Docs | - | Delete (Delete) | Media & Evidence |
 | `Remove-EvidenceLock` | 25.2.61 | Docs | - | Delete (Delete) | Media & Evidence |
@@ -207,7 +207,7 @@ Summary: Docs: 90, Form: 158, No: 19, Yes: 25
 | `Remove-UserDefinedEvent` | 25.2.61 | Docs | - | Delete (Delete) | Rules, Events & Alarms |
 | `Remove-VmsAlarmDefinition` | 25.2.61 | Docs | - | Delete (Delete) | Rules, Events & Alarms |
 | `Remove-VmsArchiveStorage` | 25.2.61 | Docs | - | Delete (Delete) | Storage |
-| `Remove-VmsBasicUser` | 25.2.61 | Docs | - | Delete (Delete) | Users & Roles |
+| `Remove-VmsBasicUser` | 25.2.61 | Yes | Remove Basic Users | Delete (Delete) | Users & Roles |
 | `Remove-VmsClientProfile` | 25.2.61 | Docs | - | Delete (Delete) | Smart Client |
 | `Remove-VmsConnectionProfile` | 25.2.61 | No | - | Write (LocalState) | Connection |
 | `Remove-VmsDeviceGroup` | 25.2.61 | Docs | - | Delete (Delete) | Cameras & Devices |
@@ -222,19 +222,19 @@ Summary: Docs: 90, Form: 158, No: 19, Yes: 25
 | `Remove-VmsRestrictedMedia` | 25.2.61 | Docs | - | Delete (Delete) | Media & Evidence |
 | `Remove-VmsRole` | 25.2.61 | Docs | - | Delete (Delete) | Users & Roles |
 | `Remove-VmsRoleClaim` | 25.2.61 | Docs | - | Delete (Delete) | Users & Roles |
-| `Remove-VmsRoleMember` | 25.2.61 | Docs | - | Delete (Delete) | Users & Roles |
+| `Remove-VmsRoleMember` | 25.2.61 | Yes | Remove from Role | Delete (Delete) | Users & Roles |
 | `Remove-VmsRule` | 25.2.61 | Docs | - | Delete (Delete) | Rules, Events & Alarms |
-| `Remove-VmsStorage` | 25.2.61 | Docs | - | Delete (Delete) | Storage |
+| `Remove-VmsStorage` | 25.2.61 | Yes | Remove Recording Storage | Delete (Delete) | Storage |
 | `Remove-VmsTrustedIssuer` | 25.2.61 | Docs | - | Delete (Delete) | Users & Roles |
 | `Remove-VmsView` | 25.2.61 | Docs | - | Delete (Delete) | Smart Client |
-| `Remove-VmsViewGroup` | 25.2.61 | Docs | - | Delete (Delete) | Smart Client |
+| `Remove-VmsViewGroup` | 25.2.61 | Yes | Remove View Groups | Delete (Delete) | Smart Client |
 | `Remove-VmsWebhook` | 25.2.61 | Docs | - | Delete (Delete) | Rules, Events & Alarms |
 | `Resize-Image` | 25.2.61 | Docs | - | Read (ReadOnly) | Media & Evidence |
 | `Resolve-VmsDeviceGroupPath` | 25.2.61 | Docs | - | Read (ReadOnly) | Cameras & Devices |
 | `Save-VmsConnectionProfile` | 25.2.61 | No | - | Write (LocalState) | Connection |
 | `Select-Camera` | 25.2.61 | Docs | - | Read (ReadOnly) | Cameras & Devices |
 | `Select-VideoOSItem` | 25.2.61 | Docs | - | Read (ReadOnly) | Advanced (SDK / Config API) |
-| `Select-VmsSite` | 25.2.61 | No | - | Read (Session) | System |
+| `Select-VmsSite` | 25.2.61 | Yes | - | Read (Session) | System |
 | `Send-Alarm` | 25.2.61 | Docs | - | Write (Operational) | Rules, Events & Alarms |
 | `Send-GenericEvent` | 25.2.61 | Form | - | Write (Operational) | Rules, Events & Alarms |
 | `Send-MipMessage` | 25.2.61 | Docs | - | Write (Operational) | Advanced (SDK / Config API) |
@@ -253,8 +253,8 @@ Summary: Docs: 90, Form: 158, No: 19, Yes: 25
 | `Set-SpeakerSetting` | 25.2.61 | No | - | Write (Modify) | Camera Configuration |
 | `Set-Stream` | 25.2.61 | Docs | - | Write (Modify) | Camera Configuration |
 | `Set-VmsAlarmDefinition` | 25.2.61 | Form | - | Write (Modify) | Rules, Events & Alarms |
-| `Set-VmsBasicUser` | 25.2.61 | Form | - | Write (Modify) | Users & Roles |
-| `Set-VmsCamera` | 25.2.61 | Yes | Add Hardware, CSV Onboarding, Camera Edit, Job Builder | Write (Modify) | Cameras & Devices |
+| `Set-VmsBasicUser` | 25.2.61 | Yes | Enable/Lock Out Basic Users, Reset Password | Write (Modify) | Users & Roles |
+| `Set-VmsCamera` | 25.2.61 | Yes | Add Hardware, Bulk Onboarding, Camera Edit, Job Builder | Write (Modify) | Cameras & Devices |
 | `Set-VmsCameraMotion` | 25.2.61 | Form | - | Write (Modify) | Camera Configuration |
 | `Set-VmsCameraStream` | 25.2.61 | Docs | - | Write (Modify) | Camera Configuration |
 | `Set-VmsClientProfile` | 25.2.61 | Form | - | Write (Modify) | Smart Client |
@@ -264,11 +264,11 @@ Summary: Docs: 90, Form: 158, No: 19, Yes: 25
 | `Set-VmsDeviceEvent` | 25.2.61 | Docs | - | Write (Modify) | Camera Configuration |
 | `Set-VmsDeviceGeneralSetting` | 25.2.61 | Docs | - | Write (Modify) | Camera Configuration |
 | `Set-VmsDeviceGroup` | 25.2.61 | Docs | - | Write (Modify) | Cameras & Devices |
-| `Set-VmsDeviceStorage` | 25.2.61 | Yes | Add Hardware, CSV Onboarding, Move Storage | Write (Modify) | Camera Configuration |
+| `Set-VmsDeviceStorage` | 25.2.61 | Yes | Add Hardware, Bulk Onboarding, Move Storage | Write (Modify) | Camera Configuration |
 | `Set-VmsDeviceStreamSetting` | 25.2.61 | Docs | - | Write (Modify) | Camera Configuration |
 | `Set-VmsFailoverGroup` | 25.2.61 | Form | - | Write (Modify) | System |
 | `Set-VmsFailoverRecorder` | 25.2.61 | Form | - | Write (Modify) | System |
-| `Set-VmsHardware` | 25.2.61 | Yes | Enable/Disable Hardware | Write (Modify) | Hardware |
+| `Set-VmsHardware` | 25.2.61 | Yes | Enable/Disable Hardware, Edit Hardware, Update Device Credentials | Write (Modify) | Hardware |
 | `Set-VmsHardwareDriver` | 25.2.61 | Docs | - | Write (HighImpact) | Hardware |
 | `Set-VmsInput` | 25.2.61 | Form | - | Write (Modify) | Cameras & Devices |
 | `Set-VmsLicense` | 25.2.61 | Docs | - | Write (HighImpact) | Licensing |
@@ -283,18 +283,18 @@ Summary: Docs: 90, Form: 158, No: 19, Yes: 25
 | `Set-VmsRestrictedMedia` | 25.2.61 | Form | - | Write (Modify) | Media & Evidence |
 | `Set-VmsRole` | 25.2.61 | Form | - | Write (Modify) | Users & Roles |
 | `Set-VmsRoleOverallSecurity` | 25.2.61 | Docs | - | Write (Modify) | Users & Roles |
-| `Set-VmsRule` | 25.2.61 | Docs | - | Write (Modify) | Rules, Events & Alarms |
+| `Set-VmsRule` | 25.2.61 | Yes | Enable/Disable Rules, Rename Rule | Write (Modify) | Rules, Events & Alarms |
 | `Set-VmsSiteInfo` | 25.2.61 | Form | - | Write (Modify) | System |
 | `Set-VmsSpeaker` | 25.2.61 | Form | - | Write (Modify) | Cameras & Devices |
 | `Set-VmsView` | 25.2.61 | Form | - | Write (Modify) | Smart Client |
-| `Set-VmsViewGroup` | 25.2.61 | Form | - | Write (Modify) | Smart Client |
+| `Set-VmsViewGroup` | 25.2.61 | Yes | Rename View Group | Write (Modify) | Smart Client |
 | `Set-VmsViewGroupAcl` | 25.2.61 | Docs | - | Write (Modify) | Smart Client |
 | `Set-VmsWebhook` | 25.2.61 | Form | - | Write (Modify) | Rules, Events & Alarms |
 | `Set-XProtectCertificate` | 25.2.61 | Docs | - | Write (HighImpact) | System |
 | `Split-VmsConfigItemPath` | 25.2.61 | Docs | - | Read (ReadOnly) | Advanced (SDK / Config API) |
 | `Split-VmsDeviceGroupPath` | 25.2.61 | Form | - | Read (ReadOnly) | Cameras & Devices |
 | `Start-Export` | 25.2.61 | Form | - | Write (Operational) | Media & Evidence |
-| `Start-VmsHardwareScan` | 25.2.61 | Yes | Add Hardware, CSV Onboarding | Write (Operational) | Hardware |
+| `Start-VmsHardwareScan` | 25.2.61 | Yes | Add Hardware, Bulk Onboarding | Write (Operational) | Hardware |
 | `Start-VmsRestrictedLiveMode` | 25.2.61 | Form | - | Write (Modify) | Media & Evidence |
 | `Stop-VmsRestrictedLiveMode` | 25.2.61 | Form | - | Write (Modify) | Media & Evidence |
 | `Test-Playback` | 25.2.61 | Form | - | Read (ReadOnly) | Media & Evidence |

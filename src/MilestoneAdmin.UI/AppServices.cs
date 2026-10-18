@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using MilestoneAdmin.Application.Abstractions;
+using MilestoneAdmin.Application.Actions;
 using MilestoneAdmin.Application.Activity;
 using MilestoneAdmin.Application.Execution;
 using MilestoneAdmin.Application.Navigation;
@@ -78,6 +79,12 @@ namespace MilestoneAdmin.UI
         public HardwareEditWorkflow HardwareEdits => new HardwareEditWorkflow(Session, Runner, Bulk, Scripts);
 
         public RemoveHardwareWorkflow HardwareRemoval => new RemoveHardwareWorkflow(Session, Runner, Bulk, Scripts);
+
+        public QuickActionService Actions => new QuickActionService(Session, Runner, Bulk, Scripts);
+
+        public SiteService Sites => new SiteService(Session, Runner, Activity);
+
+        public WorkbookImportWorkflow Workbooks => new WorkbookImportWorkflow(Session, Runner, Scripts);
 
         public void SaveSettings()
         {

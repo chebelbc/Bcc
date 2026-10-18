@@ -38,6 +38,18 @@
                     </Border>
                     <Border Style="{StaticResource Card}">
                         <StackPanel>
+                            <TextBlock Text="Site" Style="{StaticResource Text.Section}" />
+                            <TextBlock Text="In a Milestone Federated Architecture, MilestonePSTools commands work on the selected site." Style="{StaticResource Text.Muted}" TextWrapping="Wrap" />
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <Button Content="Load sites" Command="{Binding LoadSitesCommand}" />
+                                <ComboBox ItemsSource="{Binding Sites}" SelectedItem="{Binding SelectedSite}" DisplayMemberPath="Name" Width="200" Margin="8,0,0,0" />
+                                <Button Content="Switch" Command="{Binding SelectSiteCommand}" Margin="8,0,0,0" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding SiteStatus}" Style="{StaticResource Text.Muted}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
                             <TextBlock Text="License overview" Style="{StaticResource Text.Section}" />
                             <TextBlock Text="Read with Get-VmsLicenseOverview when available." Style="{StaticResource Text.Muted}" />
                             <DataGrid ItemsSource="{Binding License}" AutoGenerateColumns="True" MaxHeight="260" />

@@ -93,8 +93,21 @@ namespace MilestoneAdmin.Application.Session
             ManagementServer = server;
             ConnectedAccount = account;
             IsConnected = true;
+            SelectedSite = null;
             Inventory = new InventorySnapshot();
             lock (_byHandle) _byHandle.Clear();
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>The site commands currently target (Milestone Federated Architecture); null until sites were read.</summary>
+        public string SelectedSite { get; private set; }
+
+        /// <summary>After Select-VmsSite: commands now target another management server, so cached inventory is dropped.</summary>
+        public void SetSite(string siteName, ManagementServerInfo server)
+        {
+            SelectedSite = siteName;
+            if (server != null) ManagementServer = server;
+            Inventory = new InventorySnapshot();
             Changed?.Invoke(this, EventArgs.Empty);
         }
 

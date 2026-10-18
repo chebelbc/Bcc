@@ -25,6 +25,7 @@
                     <StackPanel>
                         <!-- Step 1 -->
                         <StackPanel Visibility="{Binding IsStep1, Converter={StaticResource BoolToVis}}" MaxWidth="720" HorizontalAlignment="Left">
+                            <TextBlock Text="{Binding SiteText}" Style="{StaticResource Text.Muted}" TextWrapping="Wrap" />
                             <TextBlock Text="Recording server" Style="{StaticResource Text.Label}" />
                             <ComboBox ItemsSource="{Binding Recorders}" SelectedItem="{Binding Recorder}" DisplayMemberPath="Name" />
                             <TextBlock Text="How should devices be found?" Style="{StaticResource Text.Label}" />
@@ -90,6 +91,9 @@
                                     </DataGridComboBoxColumn>
                                 </DataGrid.Columns>
                             </DataGrid>
+                            <TextBlock Text="Add the new cameras to a device group (optional)" Style="{StaticResource Text.Label}" />
+                            <TextBox Text="{Binding DeviceGroupPath, UpdateSourceTrigger=PropertyChanged}" Width="360" HorizontalAlignment="Left" />
+                            <TextBlock Text="Example: /Site A/Lobby. Missing group levels are created. Add-VmsHardware itself does not put devices into groups." Style="{StaticResource Text.Muted}" Margin="0,2,0,8" />
                             <StackPanel Orientation="Horizontal">
                                 <Button Content="Review camera configuration..." Command="{Binding ConfigureChannelsCommand}" Style="{StaticResource Button.Primary}" />
                                 <Button Content="Keep MilestonePSTools defaults" Command="{Binding SkipChannelsCommand}" />

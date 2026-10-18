@@ -7,6 +7,7 @@ using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using MilestoneAdmin.Application.Errors;
 using MilestoneAdmin.Application.Execution;
 using MilestoneAdmin.Application.Services;
 using MilestoneAdmin.Application.Workflows;
@@ -46,6 +47,9 @@ namespace MilestoneAdmin.UI.ViewModels
             RestartCommand = new RelayCommand(Restart);
             PrecheckCommand = new AsyncCommand(PrecheckAsync, () => Recorder != null && !IsBusy);
         }
+
+        /// <summary>Step 1 of the workflow: the site the hardware is added to (changed on the System page).</summary>
+        public string SiteText => $"Site: {Services.Session.SelectedSite ?? Services.Session.ManagementServer?.Name ?? "(not connected)"}. To add hardware to another site of a Milestone Federated Architecture, switch the site on the System page first.";
 
         public ObservableCollection<RecordingServerInfo> Recorders { get; } = new ObservableCollection<RecordingServerInfo>();
         public ObservableCollection<HardwareDriverInfo> Drivers { get; } = new ObservableCollection<HardwareDriverInfo>();
@@ -143,6 +147,7 @@ namespace MilestoneAdmin.UI.ViewModels
         public override void OnSessionChanged()
         {
             base.OnSessionChanged();
+            Raise(nameof(SiteText));
             LoadRecorders();
         }
 
@@ -275,6 +280,18 @@ namespace MilestoneAdmin.UI.ViewModels
             Raise(nameof(SkipChannelsCommand));
         }
 
+        /// <summary>Optional camera group for the new cameras (Add-VmsHardware does not assign device groups).</summary>
+        public string DeviceGroupPath
+        {
+            get => _wf?.DeviceGroupPath;
+            set
+            {
+                if (_wf == null) return;
+                _wf.DeviceGroupPath = value;
+                Raise();
+            }
+        }
+
         public ICommand ConfigureChannelsCommand { get; private set; }
         public ICommand SkipChannelsCommand { get; private set; }
 
@@ -325,15 +342,32 @@ namespace MilestoneAdmin.UI.ViewModels
         private double _progress;
         private string _progressText;
 
+        private WorkbookPreview _workbook;
+        private bool _updateExisting;
+
         public CsvImportViewModel(AppServices services)
-            : base(services, "CSV onboarding")
+            : base(services, "Bulk onboarding")
         {
             BrowseCommand = new AsyncCommand(BrowseAsync, () => IsConnected && !IsBusy);
-            RevalidateCommand = new AsyncCommand(ValidateAsync, () => _wf != null && !IsBusy);
-            ApplyCommand = new AsyncCommand(ApplyAsync, () => _wf?.Report?.CanApply == true && !IsBusy);
-            ExportFailedCommand = new RelayCommand(() => Services.Dialogs.SaveText("CSV file (*.csv)|*.csv", "onboarding-failed-rows.csv", _wf.FailedRowsCsv(_results)), () => _wf?.Report != null && (_wf.Report.InvalidRows > 0 || _results?.Any(r => r.Error != null) == true));
+            RevalidateCommand = new AsyncCommand(ValidateAsync, () => _wf != null && !IsWorkbookMode && !IsBusy);
+            ApplyCommand = new AsyncCommand(ApplyAsync, () => _wf?.Report?.CanApply == true && !IsWorkbookMode && !IsBusy);
+            ExportFailedCommand = new RelayCommand(ExportFailed, () => !IsWorkbookMode && _wf?.Report != null && (_wf.Report.InvalidRows > 0 || _results?.Any(r => r.Error != null) == true));
             ShowResultErrorCommand = new RelayCommand(o => Services.Dialogs.ShowError((o as CsvResultRow)?.Error), o => (o as CsvResultRow)?.Error != null);
+            TemplateExcelCommand = new RelayCommand(() => SaveTemplate(excel: true));
+            TemplateCsvCommand = new RelayCommand(() => SaveTemplate(excel: false));
+            ReviewWorkbookCommand = new RelayCommand(ReviewWorkbook, () => IsWorkbookMode && IsConnected && !IsBusy && Services.Session.Catalog?.Contains("Import-VmsHardware") == true);
         }
+
+        /// <summary>The opened file is a MilestonePSTools Export-VmsHardware workbook, imported by Import-VmsHardware itself.</summary>
+        public bool IsWorkbookMode => _workbook != null;
+
+        public bool IsTableMode => _workbook == null;
+        public ObservableCollection<WorkbookHardwareRow> WorkbookRows { get; } = new ObservableCollection<WorkbookHardwareRow>();
+        public string WorkbookSummary => _workbook?.SummaryText;
+        public bool UpdateExisting { get => _updateExisting; set => Set(ref _updateExisting, value); }
+        public ICommand TemplateExcelCommand { get; }
+        public ICommand TemplateCsvCommand { get; }
+        public ICommand ReviewWorkbookCommand { get; }
 
         public ObservableCollection<CsvRowResult> Rows { get; } = new ObservableCollection<CsvRowResult>();
         public ObservableCollection<string> FileMessages { get; } = new ObservableCollection<string>();
@@ -359,8 +393,10 @@ namespace MilestoneAdmin.UI.ViewModels
             }
         }
 
-        public string FormatHelp => "Columns (from the Import-VmsHardware documentation): Address (required), RecordingServer, HardwareName, Name, Channel, DeviceType, " +
-                                    "DriverNumber, DriverGroup, UserName, Password, Enabled, StorageName, Coordinates, DeviceGroups. One row per camera channel; rows with the same address are one hardware unit.";
+        public string FormatHelp => "CSV file or Excel workbook (.xlsx) with the columns documented for Import-VmsHardware: Address (required), RecordingServer, HardwareName, Name, Channel, DeviceType, " +
+                                    "DriverNumber, DriverGroup, UserName, Password, Enabled, StorageName, Coordinates, DeviceGroups (camera group paths such as /Imported cameras;/Lobby). " +
+                                    "One row per camera channel; rows with the same address are one hardware unit. In Excel, the first worksheet with an Address column is used. " +
+                                    "A workbook exported by MilestonePSTools (Export-VmsHardware) is recognized and imported by MilestonePSTools itself.";
 
         public ICommand BrowseCommand { get; }
         public ICommand RevalidateCommand { get; }
@@ -378,12 +414,34 @@ namespace MilestoneAdmin.UI.ViewModels
 
         private async Task BrowseAsync()
         {
-            var p = Services.Dialogs.OpenFile("CSV file (*.csv)|*.csv");
+            var p = Services.Dialogs.OpenFile("Hardware file (*.csv;*.xlsx)|*.csv;*.xlsx|CSV file (*.csv)|*.csv|Excel workbook (*.xlsx)|*.xlsx");
             if (p == null) return;
             Path = p;
             _wf = new CsvOnboardingWorkflow(Services.Session, Services.Runner, Services.Activity);
             Results.Clear();
+            Rows.Clear();
+            FileMessages.Clear();
+            Summary = null;
             _results = null;
+            SetWorkbook(null);
+            bool isWorkbook;
+            try
+            {
+                isWorkbook = WorkbookImportWorkflow.IsMilestonePSToolsWorkbook(p);
+            }
+            catch (CsvFormatException ex)
+            {
+                Error = new AdminError { Kind = ErrorKind.InvalidInput, Summary = "The file could not be read: " + ex.Message };
+                return;
+            }
+
+            if (isWorkbook)
+            {
+                if (Services.Session.Inventory.LoadedAt == null) await Busy("Reading the inventory...", async () => Error = (await Services.Inventory.RefreshAsync(CancellationToken.None)).Error);
+                SetWorkbook(Services.Workbooks.Preview(p));
+                return;
+            }
+
             await ValidateAsync();
         }
 
@@ -395,11 +453,11 @@ namespace MilestoneAdmin.UI.ViewModels
                 CsvTable table;
                 try
                 {
-                    table = CsvParser.ParseFile(Path);
+                    table = HardwareImportFile.Read(Path);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is FormatException || ex is System.IO.IOException || ex is UnauthorizedAccessException)
                 {
-                    Error = new AdminError { Kind = ErrorKind.InvalidInput, Summary = "The file could not be read as CSV: " + ex.Message };
+                    Error = new AdminError { Kind = ErrorKind.InvalidInput, Summary = "The file could not be read: " + ex.Message };
                     return;
                 }
 
@@ -435,7 +493,7 @@ namespace MilestoneAdmin.UI.ViewModels
                 return;
             }
 
-            if (!Services.Dialogs.Confirm("Apply CSV onboarding", $"Add {toAdd.Count} hardware unit(s) from {report.ValidRows} valid row(s)? Invalid rows ({report.InvalidRows}) are skipped.")) return;
+            if (!Services.Dialogs.Confirm("Apply bulk onboarding", $"Add {toAdd.Count} hardware unit(s) from {report.ValidRows} valid row(s)? Invalid rows ({report.InvalidRows}) are skipped.")) return;
             _wf.CommonCredential = Password != null && Password.Length > 0 ? new DeviceCredential { UserName = UserName, Password = Password.Copy() } : null;
             _wf.UseDefaultCredentials = UseDefaultCredentials;
             await Busy("Adding hardware...", async () =>
@@ -451,6 +509,84 @@ namespace MilestoneAdmin.UI.ViewModels
                     Results.Add(new CsvResultRow { Address = r.Item.DisplayAddress, RecordingServer = r.Item.RecordingServer, Status = r.Status, Details = r.Error?.Summary ?? string.Join(" ", r.Messages), Error = r.Error });
                 await Services.Inventory.RefreshAsync(CancellationToken.None);
             });
+        }
+
+        private void SetWorkbook(WorkbookPreview preview)
+        {
+            _workbook = preview;
+            WorkbookRows.Clear();
+            if (preview != null)
+            {
+                foreach (var r in preview.Hardware) WorkbookRows.Add(r);
+                foreach (var m in preview.Problems) FileMessages.Add("! " + m);
+                if (preview.ContainsPasswords) FileMessages.Add("! The workbook contains plain-text device passwords. Protect or delete it after use.");
+            }
+
+            Raise(nameof(IsWorkbookMode));
+            Raise(nameof(IsTableMode));
+            Raise(nameof(WorkbookSummary));
+            CommandManager.InvalidateRequerySuggested();
+        }
+
+        private void SaveTemplate(bool excel)
+        {
+            var recorder = Services.Session.Inventory.RecordingServers.FirstOrDefault()?.Name ?? "Recording server name";
+            var rows = HardwareImportTemplate.ExampleRows(recorder);
+            if (excel)
+            {
+                var path = Services.Dialogs.SaveFile("Excel workbook (*.xlsx)|*.xlsx", "hardware-onboarding-template.xlsx");
+                if (path != null) XlsxWriter.WriteFile(path, "Hardware import", HardwareImportTemplate.Headers, rows);
+            }
+            else
+            {
+                Services.Dialogs.SaveText("CSV file (*.csv)|*.csv", "hardware-onboarding-template.csv", CsvParser.Write(HardwareImportTemplate.Headers, rows));
+            }
+        }
+
+        private void ExportFailed()
+        {
+            var path = Services.Dialogs.SaveFile("Excel workbook (*.xlsx)|*.xlsx|CSV file (*.csv)|*.csv", "onboarding-rows-to-fix.xlsx");
+            if (path == null) return;
+            if (HardwareImportFile.IsExcel(path)) _wf.WriteFailedRowsExcel(_results, path);
+            else System.IO.File.WriteAllText(path, _wf.FailedRowsCsv(_results), new System.Text.UTF8Encoding(true));
+        }
+
+        private void ReviewWorkbook()
+        {
+            var recorder = string.IsNullOrEmpty(DefaultRecorder) ? null : Services.Session.Inventory.RecordingServers.FirstOrDefault(r => r.Name == DefaultRecorder);
+            var user = Password != null && Password.Length > 0 ? UserName : null;
+            var pwd = user != null ? Password.Copy() : null;
+            var wf = Services.Workbooks;
+            var preview = _workbook;
+            var update = UpdateExisting;
+            var plan = wf.BuildPlan(preview, recorder, user, pwd, update);
+            Review = new ReviewViewModel(Services, plan, null,
+                async (p, ct) =>
+                {
+                    var progress = new Progress<OperationEvent>(e =>
+                    {
+                        if (e.Percent.HasValue) p.Report(new BulkProgress { Completed = e.Percent.Value, Total = 100, Current = e.Activity ?? e.Message });
+                    });
+                    var (outcome, imported) = await wf.ApplyAsync(preview, recorder, user, pwd, update, progress, ct);
+                    var rows = new List<BulkResultRow>
+                    {
+                        new BulkResultRow
+                        {
+                            Name = System.IO.Path.GetFileName(preview.Path),
+                            Status = outcome.Success && !outcome.PartialFailure ? BulkItemStatus.Succeeded : BulkItemStatus.Failed,
+                            Error = outcome.Error ?? (outcome.PartialFailure ? ErrorTranslator.Translate(outcome.Result.Errors[0], new OperationContext("import hardware", preview.Path)) : null),
+                            Message = outcome.Success
+                                ? $"MilestonePSTools finished the import ({outcome.Result.Errors.Count} error(s), {outcome.Result.Warnings.Count} warning(s)). Check the Activity panel for details."
+                                : outcome.Error?.Summary
+                        }
+                    };
+                    foreach (var w in outcome.Result?.Warnings ?? new List<string>()) rows.Add(new BulkResultRow { Name = "Warning", Status = BulkItemStatus.SucceededWithWarnings, Message = w });
+                    foreach (var e in (outcome.Result?.Errors ?? new List<Protocol.ErrorInfo>()).Skip(outcome.PartialFailure ? 1 : 0))
+                        rows.Add(new BulkResultRow { Name = "Error", Status = BulkItemStatus.Failed, Message = e.Message, Error = ErrorTranslator.Translate(e, new OperationContext("import hardware", preview.Path)) });
+                    await Services.Inventory.RefreshAsync(CancellationToken.None);
+                    return rows;
+                },
+                () => Review = null);
         }
     }
 }

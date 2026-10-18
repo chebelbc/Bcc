@@ -15,12 +15,17 @@
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <ComboBox ItemsSource="{Binding Tabs}" SelectedItem="{Binding Selected}" DisplayMemberPath="Title" Width="240" />
                     <Button Content="Load" Command="{Binding LoadCommand}" Style="{StaticResource Button.Primary}" Margin="8,0,0,0" />
+                    <Button Content="Show members" Command="{Binding ShowMembersCommand}" Visibility="{Binding CanShowMembers, Converter={StaticResource BoolToVis}}" Margin="8,0,0,0" />
                     <TextBlock Text="{Binding Selected.Status}" Style="{StaticResource Text.Muted}" VerticalAlignment="Center" />
                 </StackPanel>
+                <v:QuickActionsPanel DataContext="{Binding QuickActions}" Margin="0,0,0,8" />
             </StackPanel>
-            <DataGrid ItemsSource="{Binding Selected.Data}" AutoGenerateColumns="True" />
+            <DataGrid x:Name="ItemsGrid" ItemsSource="{Binding Selected.Data}" AutoGenerateColumns="True" SelectionChanged="OnSelectionChanged" />
         </DockPanel>
         <v:ErrorBanner VerticalAlignment="Top" />
         <v:BusyOverlay />
+        <Grid Visibility="{Binding Review, Converter={StaticResource NullToVis}}" Background="{StaticResource Brush.Overlay}">
+            <v:ReviewPanel DataContext="{Binding Review}" Margin="48,32" />
+        </Grid>
     </Grid>
 </UserControl>

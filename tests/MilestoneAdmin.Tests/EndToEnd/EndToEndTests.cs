@@ -41,9 +41,9 @@ namespace MilestoneAdmin.Tests.EndToEnd
 
             // The capability model reflects the commands of the installed (mock) module.
             Assert.True(app.Session.Capabilities.Single(c => c.Definition.Id == "cameras.update").IsAvailable);
-            var rules = app.Session.Capabilities.Single(c => c.Definition.Id == "rules.query");
-            Assert.False(rules.IsAvailable);
-            Assert.Contains("Not supported by the currently installed MilestonePSTools version", rules.Reason);
+            var alarms = app.Session.Capabilities.Single(c => c.Definition.Id == "alarms.query");
+            Assert.False(alarms.IsAvailable);
+            Assert.Contains("Not supported by the currently installed MilestonePSTools version", alarms.Reason);
             Assert.Equal(global::MilestoneAdmin.Domain.Capabilities.CapabilityState.NotSupportedByModule, app.Session.Capabilities.Single(c => c.Definition.Id == "backup").State);
 
             // Connection is audited without any password.

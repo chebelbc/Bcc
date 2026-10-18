@@ -15,7 +15,11 @@
         'Get-VmsRecordingServer', 'Get-VmsHardware', 'Get-VmsCamera', 'Set-VmsCamera', 'Set-VmsHardware',
         'Remove-VmsHardware', 'Get-VmsHardwareDriver', 'Start-VmsHardwareScan', 'Add-VmsHardware', 'Get-VmsStorage',
         'Get-VmsDeviceStatus', 'Get-VmsRole', 'Get-VmsHardwarePassword', 'Get-VmsModuleConfig', 'Wait-VmsTask',
-        'Select-Camera', 'Set-VmsDeviceStorage', 'Invoke-MockScriptBlockProbe'
+        'Select-Camera', 'Set-VmsDeviceStorage', 'Invoke-MockScriptBlockProbe',
+        'Select-VmsSite', 'Get-VmsBasicUser', 'New-VmsBasicUser', 'Set-VmsBasicUser', 'Remove-VmsBasicUser', 'New-VmsRole',
+        'Get-VmsRoleMember', 'Add-VmsRoleMember', 'Remove-VmsRoleMember', 'Get-VmsRule', 'Set-VmsRule', 'Get-VmsViewGroup',
+        'New-VmsViewGroup', 'Set-VmsViewGroup', 'Remove-VmsViewGroup', 'Add-VmsStorage', 'Remove-VmsStorage', 'New-VmsDeviceGroup',
+        'Add-VmsDeviceGroupMember', 'Import-VmsHardware'
     )
     CmdletsToExport   = @()
     AliasesToExport   = @('Get-Camera')

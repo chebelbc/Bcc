@@ -173,6 +173,40 @@ namespace MilestoneAdmin.PSTools.Commands
 
         public static PipelineStep GetVmsHardwarePassword(HardwareInfo hardware) => new PipelineStep("Get-VmsHardwarePassword").With("Hardware", Ref(hardware));
 
+        /// <summary>
+        /// Import-VmsHardware with a MilestonePSTools workbook (.xlsx exported by Export-VmsHardware) or CSV file. The module
+        /// itself parses the file (docs/commands/en-US/Import-VmsHardware.md).
+        /// </summary>
+        public static PipelineStep ImportVmsHardware(string path, RecordingServerInfo recorder, string userName, string credentialSecretId, bool updateExisting)
+        {
+            var s = new PipelineStep("Import-VmsHardware").With("LiteralPath", ParameterValue.StringList(new[] { path }));
+            if (recorder != null) s.With("RecordingServer", Ref(recorder));
+            if (credentialSecretId != null) s.With("Credential", ParameterValue.Credential(userName, credentialSecretId));
+            if (updateExisting) s.With("UpdateExisting", ParameterValue.Switch());
+            return s;
+        }
+
+        // ---------------------------------------------------------------- device groups
+        /// <summary>Returns the camera group at the path, creating missing levels (New-VmsDeviceGroup -Path is idempotent).</summary>
+        public static PipelineStep NewVmsDeviceGroupPath(string path) => new PipelineStep("New-VmsDeviceGroup").With("Path", ParameterValue.StringList(new[] { path }));
+
+        /// <summary>Adds devices to the group received from the pipeline (Add-VmsDeviceGroupMember -Group is ValueFromPipeline).</summary>
+        public static PipelineStep AddVmsDeviceGroupMember(IEnumerable<Guid> deviceIds) =>
+            new PipelineStep("Add-VmsDeviceGroupMember").With("DeviceId", ParameterValue.List(deviceIds.Select(ParameterValue.Guid)));
+
+        // ---------------------------------------------------------------- sites
+        public static PipelineStep GetVmsSite(bool listAvailable)
+        {
+            var s = new PipelineStep("Get-VmsSite");
+            if (listAvailable) s.With("ListAvailable", ParameterValue.Switch());
+            return s;
+        }
+
+        public static PipelineStep SelectVmsSite(VmsObject site) => new PipelineStep("Select-VmsSite").With("Site", Ref(site));
+
+        // ---------------------------------------------------------------- roles
+        public static PipelineStep GetVmsRoleMember(VmsObject role) => new PipelineStep("Get-VmsRoleMember").With("Role", Refs(new[] { role }));
+
         // ---------------------------------------------------------------- cameras
         /// <summary>Properties of Set-VmsCamera exposed by the camera editor, with their value types.</summary>
         public static readonly IReadOnlyDictionary<string, Type> CameraSettableProperties = new Dictionary<string, Type>(StringComparer.Ordinal)
@@ -251,6 +285,12 @@ namespace MilestoneAdmin.PSTools.Commands
             yield return GetVmsHardwarePassword(hw);
             yield return SetVmsCamera(new[] { cam }, CameraSettableProperties.ToDictionary(k => k.Key, k => k.Value == typeof(string) ? (object)"x" : k.Value == typeof(bool) ? (object)true : k.Value == typeof(int) ? (object)1 : 1.0));
             yield return SetVmsDeviceStorage(new[] { cam }, "Storage", true);
+            yield return ImportVmsHardware("C:\\import.xlsx", rs, "root", "s1", true);
+            yield return NewVmsDeviceGroupPath("/Imported cameras");
+            yield return AddVmsDeviceGroupMember(new[] { Guid.NewGuid() });
+            yield return GetVmsSite(true);
+            yield return SelectVmsSite(new GenericItem { Handle = "h5", ObjectType = "Site", Name = "Site" });
+            yield return GetVmsRoleMember(new GenericItem { Handle = "h6", ObjectType = "Role", Name = "Role" });
         }
     }
 }

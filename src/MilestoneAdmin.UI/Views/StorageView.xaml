@@ -15,8 +15,9 @@
                     <TextBlock Text="Storage" Style="{StaticResource Text.PageTitle}" />
                 </DockPanel>
                 <TextBlock Text="{Binding Note}" Style="{StaticResource Text.Muted}" Margin="0,0,0,10" />
+                <v:QuickActionsPanel DataContext="{Binding QuickActions}" Margin="0,0,0,8" />
             </StackPanel>
-            <DataGrid ItemsSource="{Binding Items}">
+            <DataGrid x:Name="ItemsGrid" ItemsSource="{Binding Items}" SelectionChanged="OnSelectionChanged">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" />
                     <DataGridTextColumn Header="Recording server" Binding="{Binding RecordingServerName}" Width="*" />
@@ -29,5 +30,8 @@
         </DockPanel>
         <v:ErrorBanner VerticalAlignment="Top" />
         <v:BusyOverlay />
+        <Grid Visibility="{Binding Review, Converter={StaticResource NullToVis}}" Background="{StaticResource Brush.Overlay}">
+            <v:ReviewPanel DataContext="{Binding Review}" Margin="48,32" />
+        </Grid>
     </Grid>
 </UserControl>

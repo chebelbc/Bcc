@@ -3,8 +3,8 @@ using MilestoneAdmin.UI.ViewModels;
 
 namespace MilestoneAdmin.UI.Views
 {
-    // Page views contain no logic: everything is bound to their view models. The two multi-select grids forward
-    // their selection because DataGrid.SelectedItems is not bindable.
+    // Page views contain no logic: everything is bound to their view models. Multi-select grids forward their
+    // selection because DataGrid.SelectedItems is not bindable.
 
     public partial class SetupWizardView : UserControl { public SetupWizardView() { InitializeComponent(); } }
 
@@ -16,9 +16,27 @@ namespace MilestoneAdmin.UI.Views
 
     public partial class RecordingServersView : UserControl { public RecordingServersView() { InitializeComponent(); } }
 
-    public partial class StorageView : UserControl { public StorageView() { InitializeComponent(); } }
+    public partial class QuickActionsPanel : UserControl { public QuickActionsPanel() { InitializeComponent(); } }
 
-    public partial class GenericInventoryView : UserControl { public GenericInventoryView() { InitializeComponent(); } }
+    public partial class StorageView : UserControl
+    {
+        public StorageView()
+        {
+            InitializeComponent();
+        }
+
+        private void OnSelectionChanged(object sender, SelectionChangedEventArgs e) => (DataContext as StorageViewModel)?.SetSelection(ItemsGrid.SelectedItems);
+    }
+
+    public partial class GenericInventoryView : UserControl
+    {
+        public GenericInventoryView()
+        {
+            InitializeComponent();
+        }
+
+        private void OnSelectionChanged(object sender, SelectionChangedEventArgs e) => (DataContext as GenericInventoryViewModel)?.SetSelection(ItemsGrid.SelectedItems);
+    }
 
     public partial class MaintenanceView : UserControl { public MaintenanceView() { InitializeComponent(); } }
 

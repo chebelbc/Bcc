@@ -130,7 +130,7 @@ namespace MilestoneAdmin.Application.Workflows
             progress?.Report(new BulkProgress { Completed = n, Total = list.Count, Failed = results.Count(r => r.Error != null) });
             var ok = results.Count(r => r.Succeeded);
             _activity.Add(results.Any(r => r.Error != null) ? ActivityLevel.Warning : ActivityLevel.Success,
-                $"CSV onboarding: {ok} added, {results.Count(r => r.Error != null)} failed, {results.Count(r => r.Status == "Skipped")} skipped.");
+                $"Bulk onboarding: {ok} added, {results.Count(r => r.Error != null)} failed, {results.Count(r => r.Status == "Skipped")} skipped.");
             return results;
         }
 
@@ -239,10 +239,51 @@ namespace MilestoneAdmin.Application.Workflows
 
                 if (ch.Coordinates != null) result.Messages.Add($"Channel {ch.Channel}: coordinates not applied by guided onboarding (use Import-VmsHardware in Expert Mode).");
             }
+
+            await AssignDeviceGroupsAsync(item.Channels, cams.Items, result.Messages, rec.Name, _session, _runner, ct).ConfigureAwait(false);
+        }
+
+        /// <summary>Adds the new cameras to their DeviceGroups paths (one operation per group; missing levels are created).</summary>
+        internal static async Task AssignDeviceGroupsAsync(IEnumerable<ChannelImportItem> channels, IReadOnlyList<CameraInfo> cameras, List<string> messages, string server,
+            SessionContext session, OperationRunner runner, CancellationToken ct)
+        {
+            var byGroup = new Dictionary<string, List<CameraInfo>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var ch in channels)
+            {
+                var cam = cameras.FirstOrDefault(c => c.Channel == ch.Channel);
+                if (cam == null) continue;
+                foreach (var g in ch.DeviceGroups)
+                {
+                    if (!byGroup.TryGetValue(g, out var list)) byGroup[g] = list = new List<CameraInfo>();
+                    list.Add(cam);
+                }
+            }
+
+            foreach (var kv in byGroup)
+            {
+                var ctx = new OperationContext("add cameras to a device group", kv.Key, server);
+                var o = await runner.RunAsync(session.Gateway.PlanAssignDeviceGroup(kv.Key, kv.Value), ctx, null, ct, quiet: true).ConfigureAwait(false);
+                messages.Add(o.Success && !o.PartialFailure
+                    ? $"Device group '{kv.Key}': {kv.Value.Count} camera(s) added."
+                    : $"Failed: device group '{kv.Key}': {(o.Error ?? ErrorTranslator.Translate(o.Result.Errors[0], ctx)).Summary}");
+            }
         }
 
         /// <summary>CSV of rows that were invalid or failed, with the reason, for correction and re-import.</summary>
         public string FailedRowsCsv(IEnumerable<CsvImportItemResult> results)
+        {
+            var (headers, rows) = FailedRows(results);
+            return CsvParser.Write(headers, rows);
+        }
+
+        /// <summary>The same rows as an Excel workbook (values stored as text).</summary>
+        public void WriteFailedRowsExcel(IEnumerable<CsvImportItemResult> results, string path)
+        {
+            var (headers, rows) = FailedRows(results);
+            XlsxWriter.WriteFile(path, "Rows to fix", headers, rows);
+        }
+
+        private (List<string> Headers, List<IReadOnlyList<string>> Rows) FailedRows(IEnumerable<CsvImportItemResult> results)
         {
             var headers = new List<string> { "Line", "Status", "Reason" };
             headers.AddRange(Table.Headers.Where(h => !string.Equals(h, "Password", StringComparison.OrdinalIgnoreCase)));
@@ -256,7 +297,7 @@ namespace MilestoneAdmin.Application.Workflows
                 rows.Add(new[] { line.ToString(CultureInfo.InvariantCulture), "Failed", r.Error.Summary }.Concat(headers.Skip(3).Select(row.Get)).ToList());
             }
 
-            return CsvParser.Write(headers, rows);
+            return (headers, rows);
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using MilestoneAdmin.Application.Abstractions;
+using MilestoneAdmin.Application.Actions;
 using MilestoneAdmin.Application.Activity;
 using MilestoneAdmin.Application.Execution;
 using MilestoneAdmin.Application.Reports;
@@ -53,6 +54,9 @@ namespace MilestoneAdmin.Tests.EndToEnd
             Inventory = new InventoryService(Session, Activity);
             Reports = new ReportService(Session, Inventory);
             Cameras = new CameraEditWorkflow(Session, Runner, Bulk, Scripts);
+            Actions = new QuickActionService(Session, Runner, Bulk, Scripts);
+            Sites = new SiteService(Session, Runner, Activity);
+            Workbooks = new WorkbookImportWorkflow(Session, Runner, Scripts);
             Settings = new AppSettings { MipSdkEulaAccepted = true };
         }
 
@@ -69,6 +73,9 @@ namespace MilestoneAdmin.Tests.EndToEnd
         public InventoryService Inventory { get; }
         public ReportService Reports { get; }
         public CameraEditWorkflow Cameras { get; }
+        public QuickActionService Actions { get; }
+        public SiteService Sites { get; }
+        public WorkbookImportWorkflow Workbooks { get; }
         public AppSettings Settings { get; }
 
         public static SecureString Secure(string s)

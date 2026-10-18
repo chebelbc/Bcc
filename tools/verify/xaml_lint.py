@@ -98,7 +98,7 @@ class Linter:
         self.types = load_types(self.src)
         self.problems = []
         self.global_keys = set()
-        for f in ("Themes/Theme.xaml", "App.xaml", "Views/PageTemplates.xaml"):
+        for f in ("Themes/Theme.xaml", "App.xaml", "Views/FieldTemplates.xaml", "Views/PageTemplates.xaml"):
             p = os.path.join(self.ui, f)
             if os.path.exists(p):
                 for el in ET.parse(p).getroot().iter():

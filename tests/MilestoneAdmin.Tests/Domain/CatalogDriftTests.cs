@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using MilestoneAdmin.Application.Actions;
 using MilestoneAdmin.Domain.Catalog;
 using MilestoneAdmin.Domain.Classification;
 using MilestoneAdmin.Domain.Scripting;
@@ -91,10 +92,32 @@ namespace MilestoneAdmin.Tests.Domain
         {
             var support = JsonNode.Parse(File.ReadAllText(Path.Combine(TestPaths.RepoRoot, "catalog", "gui-support.json"))).AsObject();
             var listed = support.GetObject("wizards").Select(kv => kv.Key).Concat(support.GetObject("screens").Select(kv => kv.Key)).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var unlisted = PsCommands.Samples().Select(s => s.Command).Distinct().Where(c => !listed.Contains(c)).ToList();
+            var unlisted = PsCommands.Samples().Select(s => s.Command).Concat(QuickActionCatalog.All.Select(a => a.Command)).Distinct().Where(c => !listed.Contains(c)).ToList();
             Assert.True(unlisted.Count == 0, "Add to catalog/gui-support.json: " + string.Join(", ", unlisted));
             var unknown = listed.Where(c => Catalog.Find(c) == null).ToList();
             Assert.True(unknown.Count == 0, "Not in catalog: " + string.Join(", ", unknown));
+        }
+
+        [Fact]
+        public void Quick_actions_use_only_documented_commands_parameters_and_values()
+        {
+            Assert.NotEmpty(QuickActionCatalog.All);
+            var problems = QuickActionCatalog.All.Select(a => (a.Id, Reason: QuickActionService.UnavailableReason(a, Catalog))).Where(x => x.Reason != null).Select(x => $"{x.Id}: {x.Reason}").ToList();
+            foreach (var a in QuickActionCatalog.All)
+            {
+                var cmd = Catalog.Find(a.Command);
+                foreach (var kv in a.Fixed.Where(kv => kv.Value is string))
+                {
+                    var p = cmd?.FindParameter(kv.Key);
+                    if (p != null && p.AcceptedValues.Count > 0 && !p.AcceptedValues.Contains((string)kv.Value))
+                        problems.Add($"{a.Id}: -{kv.Key} '{kv.Value}' is not one of {string.Join(", ", p.AcceptedValues)}");
+                }
+
+                if (a.Selection == ActionSelection.None && a.TargetNameField == null) problems.Add($"{a.Id}: creation actions need a TargetNameField");
+            }
+
+            Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
+            Assert.Equal(QuickActionCatalog.All.Count, QuickActionCatalog.All.Select(a => a.Id).Distinct().Count());
         }
 
         [Fact]

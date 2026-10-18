@@ -19,12 +19,21 @@ public class RequiresInteractiveSessionAttribute : Attribute
 {
     public string Description { get { return "Requires an interactive session"; } }
 }
+// Same shape as MilestonePSTools' VersionInterval / RequiresVmsVersionAttribute (src/MilestonePSTools/Attributes.cs):
+// RequiredVersion is a VersionInterval with MinVersion/MaxVersion; only the "minimum version" form is simulated.
+public class VersionInterval
+{
+    public VersionInterval(string version) { MinVersion = new Version(version.Trim('[', '(', ' ').Split(',')[0]); MaxVersion = new Version(int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue); }
+    public Version MinVersion { get; private set; }
+    public Version MaxVersion { get; private set; }
+    public override string ToString() { return MinVersion.ToString(); }
+}
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
 public class RequiresVmsVersionAttribute : Attribute
 {
-    public RequiresVmsVersionAttribute(string version) { Version = version; }
-    public string Version { get; set; }
-    public string Description { get { return "Requires VMS version " + Version; } }
+    public RequiresVmsVersionAttribute(string version) { RequiredVersion = new VersionInterval(version); }
+    public VersionInterval RequiredVersion { get; private set; }
+    public string Description { get { return "Requires VMS version " + RequiredVersion; } }
 }
 '@
 }

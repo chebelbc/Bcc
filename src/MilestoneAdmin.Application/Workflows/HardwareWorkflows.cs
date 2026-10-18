@@ -312,7 +312,10 @@ namespace MilestoneAdmin.Application.Workflows
             return null;
         }
 
-        /// <summary>Step: review channel configuration changes (names, enabled, storage).</summary>
+        /// <summary>Optional camera group path (e.g. "/Site A/Lobby") for all new cameras; missing levels are created.</summary>
+        public string DeviceGroupPath { get; set; }
+
+        /// <summary>Step: review channel configuration changes (names, enabled, storage, device group).</summary>
         public (ChangePlan Plan, List<VmsOperation> Operations) BuildChannelPlan()
         {
             var plan = new ChangePlan { Title = "Configure new cameras", OperationId = "cameras.update", Risk = RiskLevel.Modify, WhatIfAvailable = true };
@@ -331,6 +334,20 @@ namespace MilestoneAdmin.Application.Workflows
                 }
 
                 plan.Items.Add(item);
+            }
+
+            var group = string.IsNullOrWhiteSpace(DeviceGroupPath) ? null : DeviceGroupPath.Trim();
+            if (group != null && Channels.Count > 0)
+            {
+                if (!HardwareCsvValidator.IsValidGroupPath(group))
+                    plan.Warnings.Add($"'{group}' is not a valid device group path (example: /Site A/Lobby); no device group is assigned.");
+                else
+                {
+                    ops.Add(_session.Gateway.PlanAssignDeviceGroup(group, Channels.Select(c => c.Camera).ToList()));
+                    foreach (var item in plan.Items) item.Properties.Add(new PropertyChange { Property = "DeviceGroup", DisplayName = "Device group", Current = null, New = group });
+                    plan.Summary.Add(new KeyValuePair<string, string>("Device group", group));
+                    plan.Warnings.Add("Device groups are created by New-VmsDeviceGroup, which does not support -WhatIf; missing group levels are created.");
+                }
             }
 
             plan.Summary.Add(new KeyValuePair<string, string>("New cameras", Channels.Count.ToString(CultureInfo.InvariantCulture)));

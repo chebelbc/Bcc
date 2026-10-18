@@ -45,6 +45,10 @@ namespace MilestoneAdmin.Domain.Csv
         public bool? Enabled { get; set; }
         public string StorageName { get; set; }
         public string Coordinates { get; set; }
+
+        /// <summary>Camera group paths such as "/Imported cameras/Lobby" (DeviceGroups column, ';'-separated).</summary>
+        public List<string> DeviceGroups { get; } = new List<string>();
+
         public int SourceLine { get; set; }
     }
 
@@ -109,8 +113,6 @@ namespace MilestoneAdmin.Domain.Csv
                 report.FileWarnings.Add($"Column '{h}' is not recognized and will be ignored.");
             if (table.IndexOf("Password") >= 0)
                 report.FileWarnings.Add("This file contains plain-text passwords. Protect or delete it after use. Passwords are never displayed or logged by this application.");
-            if (table.IndexOf("DeviceGroups") >= 0)
-                report.FileWarnings.Add("The DeviceGroups column is not applied by guided onboarding. Use Import-VmsHardware (Expert Mode) to assign device groups.");
             if (table.Rows.Count == 0) report.FileErrors.Add("The file contains no data rows.");
 
             var seen = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -159,6 +161,18 @@ namespace MilestoneAdmin.Domain.Csv
 
             var enabled = row.Get("Enabled");
             if (enabled.Length > 0 && !TryParseBool(enabled, out _)) row.Errors.Add($"Invalid Enabled value '{enabled}'. Use True or False.");
+
+            var groups = row.Get("DeviceGroups");
+            if (groups.Length > 0)
+            {
+                foreach (var g in SplitGroups(groups))
+                {
+                    if (!IsValidGroupPath(g)) row.Errors.Add($"Invalid device group path '{g}'. Use paths like /Imported cameras/Lobby, separated by ';'.");
+                }
+
+                if (!string.Equals(deviceType, "Camera", StringComparison.OrdinalIgnoreCase))
+                    row.Warnings.Add("DeviceGroups are applied to cameras only in guided onboarding.");
+            }
 
             var coords = row.Get("Coordinates");
             if (coords.Length > 0 && !TryParseCoordinates(coords, out _, out _)) row.Errors.Add($"Invalid Coordinates '{coords}'. Use 'latitude, longitude' in decimal degrees.");
@@ -253,11 +267,26 @@ namespace MilestoneAdmin.Domain.Csv
                         Coordinates = NullIfEmpty(row.Get("Coordinates")),
                         SourceLine = row.LineNumber
                     });
+                    hw.Channels[hw.Channels.Count - 1].DeviceGroups.AddRange(SplitGroups(row.Get("DeviceGroups")));
                 }
             }
         }
 
         private static string NullIfEmpty(string s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+
+        public static IEnumerable<string> SplitGroups(string value) =>
+            (value ?? string.Empty).Split(';').Select(g => g.Trim()).Where(g => g.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// A camera group path as used by New-VmsDeviceGroup -Path: starts with '/', no empty levels. ('/' inside a group
+        /// name would need MilestonePSTools' escaping rules and is rejected here rather than guessed.)
+        /// </summary>
+        public static bool IsValidGroupPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || path[0] != '/' || path.Length < 2) return false;
+            var parts = path.Substring(1).TrimEnd('/').Split('/');
+            return parts.All(p => p.Trim().Length > 0) && path.IndexOf('\\') < 0;
+        }
 
         public static bool TryParseAddress(string text, out Uri uri)
         {

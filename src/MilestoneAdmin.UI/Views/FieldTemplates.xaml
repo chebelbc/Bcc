@@ -1,0 +1,116 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:vm="clr-namespace:MilestoneAdmin.UI.ViewModels"
+                    xmlns:v="clr-namespace:MilestoneAdmin.UI.Views">
+    <!-- Typed input controls generated from command metadata (Command Explorer forms and quick actions). -->
+    <ResourceDictionary.MergedDictionaries>
+        <!-- Merged here so StaticResource lookups do not depend on sibling dictionaries in App.xaml. -->
+        <ResourceDictionary Source="pack://application:,,,/XProtectAdminAssistant;component/Themes/Theme.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+        <DataTemplate x:Key="Field.Text" DataType="{x:Type vm:FieldViewModel}">
+            <StackPanel Margin="0,0,0,8">
+                <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="{Binding Help}" Style="{StaticResource Text.Muted}" FontSize="11" />
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="Field.List" DataType="{x:Type vm:FieldViewModel}">
+            <StackPanel Margin="0,0,0,8">
+                <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="64" VerticalContentAlignment="Top" />
+                <TextBlock Text="One value per line." Style="{StaticResource Text.Muted}" FontSize="11" />
+                <TextBlock Text="{Binding Help}" Style="{StaticResource Text.Muted}" FontSize="11" />
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="Field.Checkbox" DataType="{x:Type vm:FieldViewModel}">
+            <StackPanel Margin="0,0,0,8">
+                <CheckBox Content="{Binding Label}" IsChecked="{Binding Flag}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Help}" Style="{StaticResource Text.Muted}" FontSize="11" />
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="Field.Toggle" DataType="{x:Type vm:FieldViewModel}">
+            <StackPanel Margin="0,0,0,8">
+                <CheckBox Content="{Binding Label}" IsChecked="{Binding Flag}" IsThreeState="True" FontWeight="SemiBold" ToolTip="Indeterminate = do not set this parameter" />
+                <TextBlock Text="{Binding Help}" Style="{StaticResource Text.Muted}" FontSize="11" />
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="Field.Dropdown" DataType="{x:Type vm:FieldViewModel}">
+            <StackPanel Margin="0,0,0,8">
+                <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                <ComboBox ItemsSource="{Binding Field.AcceptedValues}" SelectedItem="{Binding Text}" />
+                <TextBlock Text="{Binding Help}" Style="{StaticResource Text.Muted}" FontSize="11" />
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="Field.MultiSelect" DataType="{x:Type vm:FieldViewModel}">
+            <StackPanel Margin="0,0,0,8">
+                <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                <ItemsControl ItemsSource="{Binding Options}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:ObjectOption}">
+                            <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="{Binding Help}" Style="{StaticResource Text.Muted}" FontSize="11" />
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="Field.Object" DataType="{x:Type vm:FieldViewModel}">
+            <StackPanel Margin="0,0,0,8">
+                <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                <ComboBox ItemsSource="{Binding ObjectOptions}" SelectedItem="{Binding SelectedObject}" DisplayMemberPath="Label" IsTextSearchEnabled="True" />
+                <TextBlock Text="{Binding ObjectTypesText}" Style="{StaticResource Text.Muted}" FontSize="11" />
+                <TextBlock Text="{Binding Help}" Style="{StaticResource Text.Muted}" FontSize="11" />
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="Field.ObjectMulti" DataType="{x:Type vm:FieldViewModel}">
+            <StackPanel Margin="0,0,0,8">
+                <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                <ListBox ItemsSource="{Binding ObjectOptions}" MaxHeight="160">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:ObjectOption}">
+                            <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <TextBlock Text="{Binding ObjectTypesText}" Style="{StaticResource Text.Muted}" FontSize="11" />
+                <TextBlock Text="{Binding Help}" Style="{StaticResource Text.Muted}" FontSize="11" />
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="Field.Credential" DataType="{x:Type vm:FieldViewModel}">
+            <StackPanel Margin="0,0,0,8">
+                <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged}" Width="180" ToolTip="User name" />
+                    <PasswordBox v:SecurePassword.Sink="{Binding}" Width="180" Margin="8,0,0,0" ToolTip="Password" />
+                </StackPanel>
+                <TextBlock Text="{Binding Help}" Style="{StaticResource Text.Muted}" FontSize="11" />
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="Field.Secret" DataType="{x:Type vm:FieldViewModel}">
+            <StackPanel Margin="0,0,0,8">
+                <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                <PasswordBox v:SecurePassword.Sink="{Binding}" />
+                <TextBlock Text="{Binding Help}" Style="{StaticResource Text.Muted}" FontSize="11" />
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="Field.Date" DataType="{x:Type vm:FieldViewModel}">
+            <StackPanel Margin="0,0,0,8">
+                <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                <DatePicker SelectedDate="{Binding Date}" />
+                <TextBlock Text="{Binding Help}" Style="{StaticResource Text.Muted}" FontSize="11" />
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="Field.Unsupported" DataType="{x:Type vm:FieldViewModel}">
+            <StackPanel Margin="0,0,0,8">
+                <TextBlock Text="{Binding Label}" FontWeight="SemiBold" Foreground="{StaticResource Brush.Muted}" />
+                <TextBlock Text="This parameter type cannot be entered in a form (script blocks are never accepted). Use the generated PowerShell instead." Style="{StaticResource Text.Muted}" />
+                <TextBlock Text="{Binding Help}" Style="{StaticResource Text.Muted}" FontSize="11" />
+            </StackPanel>
+        </DataTemplate>
+        <v:FieldTemplateSelector x:Key="FieldSelector"
+                                 Text="{StaticResource Field.Text}" List="{StaticResource Field.List}" Checkbox="{StaticResource Field.Checkbox}"
+                                 Toggle="{StaticResource Field.Toggle}" Dropdown="{StaticResource Field.Dropdown}" MultiSelect="{StaticResource Field.MultiSelect}"
+                                 ObjectSelector="{StaticResource Field.Object}" ObjectMultiSelector="{StaticResource Field.ObjectMulti}"
+                                 Credential="{StaticResource Field.Credential}" Secret="{StaticResource Field.Secret}" Date="{StaticResource Field.Date}"
+                                 Unsupported="{StaticResource Field.Unsupported}" />
+</ResourceDictionary>

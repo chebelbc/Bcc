@@ -18,6 +18,7 @@ using MilestoneAdmin.Domain.Capabilities;
 using MilestoneAdmin.Domain.Csv;
 using MilestoneAdmin.Domain.Inventory;
 using MilestoneAdmin.PSTools;
+using MilestoneAdmin.PSTools.Execution;
 using MilestoneAdmin.PSTools.Commands;
 using MilestoneAdmin.UI.Mvvm;
 
@@ -25,13 +26,57 @@ namespace MilestoneAdmin.UI.ViewModels
 {
     public sealed class SystemViewModel : PageViewModel
     {
+        private GenericItem _site;
+        private string _siteStatus;
+
         public SystemViewModel(AppServices services)
             : base(services, "System")
         {
             RefreshCommand = new AsyncCommand(RefreshAsync, () => IsConnected && !IsBusy);
+            LoadSitesCommand = new AsyncCommand(LoadSitesAsync, () => IsConnected && !IsBusy && Services.Sites.IsAvailable);
+            SelectSiteCommand = new AsyncCommand(SelectSiteAsync, () => IsConnected && !IsBusy && SelectedSite != null && SelectedSite.Name != Services.Session.SelectedSite);
         }
 
         public ICommand RefreshCommand { get; }
+        public ICommand LoadSitesCommand { get; }
+        public ICommand SelectSiteCommand { get; }
+
+        /// <summary>Sites of a Milestone Federated Architecture (Get-VmsSite -ListAvailable).</summary>
+        public ObservableCollection<GenericItem> Sites { get; } = new ObservableCollection<GenericItem>();
+        public GenericItem SelectedSite { get => _site; set => Set(ref _site, value); }
+        public string SiteStatus { get => _siteStatus; set => Set(ref _siteStatus, value); }
+
+        private async Task LoadSitesAsync()
+        {
+            await Busy("Reading sites...", async () =>
+            {
+                var list = await Services.Sites.LoadAsync(CancellationToken.None);
+                Error = list.Error;
+                Sites.Clear();
+                foreach (var site in list.Sites) Sites.Add(site);
+                SelectedSite = Sites.FirstOrDefault(x => x.Name == (Services.Session.SelectedSite ?? list.Selected));
+                SiteStatus = list.Error != null ? null
+                    : list.IsMultiSite ? $"{list.Sites.Count} sites available. Commands target: {list.Selected}."
+                    : "Only one site is available (connect with 'Include child sites' to see the sites of a Milestone Federated Architecture).";
+            });
+        }
+
+        private async Task SelectSiteAsync()
+        {
+            var site = SelectedSite;
+            if (!Services.Dialogs.Confirm("Switch site",
+                    $"All pages, reports and changes will target the site '{site.Name}' until you switch again. The loaded inventory is cleared and read again from that site. Continue?")) return;
+            await Busy($"Selecting site '{site.Name}'...", async () =>
+            {
+                Error = await Services.Sites.SelectAsync(site, CancellationToken.None);
+                if (Error == null)
+                {
+                    SiteStatus = $"Commands target: {site.Name}.";
+                    Error = (await Services.Inventory.RefreshAsync(CancellationToken.None)).Error;
+                }
+            });
+            Load();
+        }
         public ObservableCollection<KeyValuePair<string, string>> Facts { get; } = new ObservableCollection<KeyValuePair<string, string>>();
         public ObservableCollection<CapabilityStatus> Capabilities { get; } = new ObservableCollection<CapabilityStatus>();
         public DataView License { get; private set; }
@@ -56,6 +101,7 @@ namespace MilestoneAdmin.UI.ViewModels
             Add("Connected", s.IsConnected ? "Yes" : "No");
             Add("Server address", s.Connection?.ServerAddress?.ToString());
             Add("Management server", s.ManagementServer?.Name);
+            Add("Selected site", s.SelectedSite ?? s.ManagementServer?.Name);
             Add("Computer name", s.ManagementServer?.ComputerName);
             Add("XProtect version", s.ManagementServer?.Version == null ? null : $"{s.ManagementServer.Version} ({VmsVersion.ToProductName(s.ManagementServer.Version)})");
             Add("Signed in as", s.ConnectedAccount);
@@ -181,7 +227,11 @@ namespace MilestoneAdmin.UI.ViewModels
             RemoveCommand = new RelayCommand(ReviewRemove, () => SelectedItems.Count > 0 && _shell.Capability("hardware.remove").IsAvailable);
             RevealPasswordCommand = new AsyncCommand(RevealPasswordAsync, () => ExpertMode && SelectedItems.Count == 1 && Services.Session.Catalog?.Contains("Get-VmsHardwarePassword") == true);
             ExportCommand = new RelayCommand(Export, () => Items.Count > 0);
+            QuickActions = new QuickActionsViewModel(services, this, "Hardware", () => SelectedItems, RefreshAsync);
         }
+
+        /// <summary>Edit hardware (name, description, address) and update device credentials.</summary>
+        public QuickActionsViewModel QuickActions { get; }
 
         public ObservableCollection<HardwareInfo> Items { get; } = new ObservableCollection<HardwareInfo>();
         public ICollectionView View { get; }
@@ -225,6 +275,7 @@ namespace MilestoneAdmin.UI.ViewModels
         {
             SelectedItems.Clear();
             SelectedItems.AddRange(items.OfType<HardwareInfo>());
+            QuickActions.Refresh();
             CommandManager.InvalidateRequerySuggested();
         }
 
@@ -238,6 +289,7 @@ namespace MilestoneAdmin.UI.ViewModels
         {
             base.OnSessionChanged();
             Load();
+            QuickActions.Refresh();
         }
 
         private void Load()
@@ -709,27 +761,42 @@ namespace MilestoneAdmin.UI.ViewModels
         public StorageViewModel(AppServices services)
             : base(services, "Storage")
         {
-            RefreshCommand = new AsyncCommand(async () =>
-            {
-                await Busy("Retrieving storage...", async () => Error = (await Services.Inventory.RefreshAsync(CancellationToken.None)).Error);
-                Load();
-            }, () => IsConnected && !IsBusy);
+            RefreshCommand = new AsyncCommand(RefreshAsync, () => IsConnected && !IsBusy);
+            QuickActions = new QuickActionsViewModel(services, this, "Storage", () => SelectedItems, RefreshAsync);
         }
 
         public ObservableCollection<StorageInfo> Items { get; } = new ObservableCollection<StorageInfo>();
+        public List<StorageInfo> SelectedItems { get; } = new List<StorageInfo>();
         public ICommand RefreshCommand { get; }
+
+        /// <summary>Add a recording storage, or remove storages that are not the default and not in use.</summary>
+        public QuickActionsViewModel QuickActions { get; }
 
         public string Note => "Retention is shown in days, computed from the storage's RetainMinutes property. Archive storages can be inspected with Get-VmsArchiveStorage in Command Explorer.";
 
-        public override Task OnNavigatedToAsync()
+        public void SetSelection(IList items)
         {
-            Load();
-            return Task.CompletedTask;
+            SelectedItems.Clear();
+            SelectedItems.AddRange(items.OfType<StorageInfo>());
+            QuickActions.Refresh();
+        }
+
+        public override async Task OnNavigatedToAsync()
+        {
+            if (IsConnected && Services.Session.Inventory.LoadedAt == null) await RefreshAsync();
+            else Load();
         }
 
         public override void OnSessionChanged()
         {
             base.OnSessionChanged();
+            Load();
+            QuickActions.Refresh();
+        }
+
+        private async Task RefreshAsync()
+        {
+            await Busy("Retrieving storage...", async () => Error = (await Services.Inventory.RefreshAsync(CancellationToken.None)).Error);
             Load();
         }
 
@@ -747,11 +814,23 @@ namespace MilestoneAdmin.UI.ViewModels
 
         public string Title { get; set; }
         public GenericQuery Query { get; set; }
+
+        /// <summary>Custom loader (e.g. members of one role); null = run <see cref="Query"/>.</summary>
+        public Func<CancellationToken, Task<QueryResult<GenericItem>>> Loader { get; set; }
+
+        /// <summary>Object the tab's items belong to (the role whose members are listed).</summary>
+        public VmsObject Parent { get; set; }
+
+        public string ObjectType => Query.ObjectType;
+        public List<GenericItem> Items { get; } = new List<GenericItem>();
         public DataView Data { get => _data; set => Set(ref _data, value); }
         public string Status { get => _status; set => Set(ref _status, value); }
     }
 
-    /// <summary>Read-only inventory pages (Phase 3 areas) driven by query definitions; unavailable commands are explained, not hidden.</summary>
+    /// <summary>
+    /// Inventory pages for roles, rules and Smart Client, driven by query definitions; unavailable commands are explained,
+    /// not hidden. Guided changes for the selected rows come from the quick action catalog.
+    /// </summary>
     public sealed class GenericInventoryViewModel : PageViewModel
     {
         private InventoryTab _selected;
@@ -761,38 +840,80 @@ namespace MilestoneAdmin.UI.ViewModels
         {
             Note = note;
             foreach (var t in tabs) Tabs.Add(t);
+            QuickActions = new QuickActionsViewModel(services, this, null, () => SelectedItems, () => LoadAsync(), () => Selected?.Parent);
             Selected = Tabs.FirstOrDefault();
-            LoadCommand = new AsyncCommand(LoadAsync, () => IsConnected && !IsBusy && Selected != null);
+            LoadCommand = new AsyncCommand(() => LoadAsync(), () => IsConnected && !IsBusy && Selected != null);
+            ShowMembersCommand = new AsyncCommand(ShowMembersAsync, () => IsConnected && !IsBusy && Selected?.ObjectType == "Role" && SelectedItems.Count == 1 && Services.Session.Catalog?.Contains("Get-VmsRoleMember") == true);
         }
 
         /// <summary>Columns are the simple-typed properties the objects actually have; nothing is assumed.</summary>
         public string Note { get; }
         public ObservableCollection<InventoryTab> Tabs { get; } = new ObservableCollection<InventoryTab>();
-        public InventoryTab Selected { get => _selected; set => Set(ref _selected, value); }
+        public List<GenericItem> SelectedItems { get; } = new List<GenericItem>();
+        public QuickActionsViewModel QuickActions { get; }
+        public bool CanShowMembers => Tabs.Any(t => t.ObjectType == "Role");
+
+        public InventoryTab Selected
+        {
+            get => _selected;
+            set
+            {
+                if (!Set(ref _selected, value)) return;
+                SelectedItems.Clear();
+                QuickActions.ObjectType = value?.ObjectType;
+                QuickActions.Refresh();
+            }
+        }
+
         public ICommand LoadCommand { get; }
+        public ICommand ShowMembersCommand { get; }
 
         private static InventoryTab Tab(string title, string type, Func<Protocol.PipelineStep> step, string command, params string[] props) =>
             new InventoryTab { Title = title, Query = new GenericQuery { Title = "Retrieve " + title.ToLowerInvariant(), ObjectType = type, Step = step, Properties = props, RequiredCommand = command } };
 
         public static GenericInventoryViewModel Security(AppServices s) => new GenericInventoryViewModel(s, "Users & Roles",
-            "Read-only in this version. Role membership and permission changes are available in Command Explorer (Expert Mode) for the commands your module supports.",
+            "Load a list, select rows and choose an action. Role permissions are configured in Management Client; MilestonePSTools role permission commands are available in Command Explorer (Expert Mode).",
             Tab("Roles", "Role", PsCommands.GetVmsRole, "Get-VmsRole"),
             Tab("Basic users", "BasicUser", PsCommands.GetVmsBasicUser, "Get-VmsBasicUser"));
 
         public static GenericInventoryViewModel Rules(AppServices s) => new GenericInventoryViewModel(s, "Rules & Events",
-            "Read-only in this version. Rule import/export is available as Import-VmsRule / Export-VmsRule in Command Explorer.",
+            "Rules can be enabled, disabled and renamed here. Alarm definitions are listed read-only: Set-VmsAlarmDefinition has no Enabled parameter. Rule import/export is available as Import-VmsRule / Export-VmsRule in Command Explorer.",
             Tab("Rules", "Rule", PsCommands.GetVmsRule, "Get-VmsRule"),
             Tab("Alarm definitions", "AlarmDefinition", PsCommands.GetVmsAlarmDefinition, "Get-VmsAlarmDefinition"));
 
         public static GenericInventoryViewModel SmartClient(AppServices s) => new GenericInventoryViewModel(s, "Smart Client",
-            "Read-only in this version.",
+            "View groups can be created, renamed and removed here. Smart Client profiles are listed read-only.",
             Tab("View groups", "ViewGroup", () => PsCommands.GetVmsViewGroup(), "Get-VmsViewGroup"),
             Tab("Smart Client profiles", "ClientProfile", PsCommands.GetVmsClientProfile, "Get-VmsClientProfile"));
 
-        private async Task LoadAsync()
+        /// <summary>Maps the grid's selected rows back to the objects (rows keep their original index in the table).</summary>
+        public void SetSelection(IList rows)
         {
+            SelectedItems.Clear();
             var tab = Selected;
-            if (Services.Session.Catalog?.Contains(tab.Query.RequiredCommand) != true)
+            if (tab?.Data != null)
+            {
+                foreach (var r in rows.OfType<DataRowView>())
+                {
+                    var i = tab.Data.Table.Rows.IndexOf(r.Row);
+                    if (i >= 0 && i < tab.Items.Count) SelectedItems.Add(tab.Items[i]);
+                }
+            }
+
+            QuickActions.Refresh();
+            CommandManager.InvalidateRequerySuggested();
+        }
+
+        public override void OnSessionChanged()
+        {
+            base.OnSessionChanged();
+            QuickActions.Refresh();
+        }
+
+        private async Task LoadAsync(InventoryTab tab = null)
+        {
+            tab = tab ?? Selected;
+            if (tab.Loader == null && Services.Session.Catalog?.Contains(tab.Query.RequiredCommand) != true)
             {
                 tab.Status = $"Not supported by the currently installed MilestonePSTools version: {tab.Query.RequiredCommand} is not available.";
                 return;
@@ -800,16 +921,41 @@ namespace MilestoneAdmin.UI.ViewModels
 
             await Busy("Loading " + tab.Title.ToLowerInvariant() + "...", async () =>
             {
-                var r = await Services.Session.Gateway.QueryAsync(tab.Query, CancellationToken.None);
+                var r = tab.Loader != null ? await tab.Loader(CancellationToken.None) : await Services.Session.Gateway.QueryAsync(tab.Query, CancellationToken.None);
                 if (!r.Success)
                 {
                     Error = ErrorTranslator.Translate(r.Raw, new OperationContext(tab.Query.Title));
                     return;
                 }
 
+                Services.Session.Register(r.Items);
+                tab.Items.Clear();
+                tab.Items.AddRange(r.Items);
                 tab.Data = GenericTable.ToDataView(r.Items);
                 tab.Status = $"{r.Items.Count} item(s) · source: {tab.Query.RequiredCommand}";
             });
+            if (tab == Selected)
+            {
+                SelectedItems.Clear();
+                QuickActions.Refresh();
+            }
+        }
+
+        private async Task ShowMembersAsync()
+        {
+            var role = SelectedItems[0];
+            var existing = Tabs.FirstOrDefault(t => t.ObjectType == "User");
+            if (existing != null) Tabs.Remove(existing);
+            var tab = new InventoryTab
+            {
+                Title = $"Members of {role.Name}",
+                Parent = role,
+                Query = new GenericQuery { Title = $"Retrieve members of {role.Name}", ObjectType = "User", RequiredCommand = "Get-VmsRoleMember" },
+                Loader = ct => Services.Session.Gateway.GetRoleMembersAsync(role, ct)
+            };
+            Tabs.Add(tab);
+            Selected = tab;
+            await LoadAsync(tab);
         }
     }
 }

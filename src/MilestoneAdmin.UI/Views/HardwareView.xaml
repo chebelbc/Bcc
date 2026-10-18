@@ -14,7 +14,7 @@
                 <TextBlock Text="{Binding Summary}" Style="{StaticResource Text.Muted}" />
                 <WrapPanel Margin="0,8,0,8">
                     <Button Content="Add hardware..." Command="{Binding AddCommand}" Style="{StaticResource Button.Primary}" />
-                    <Button Content="Bulk onboarding from CSV..." Command="{Binding CsvCommand}" />
+                    <Button Content="Bulk onboarding (CSV / Excel)..." Command="{Binding CsvCommand}" />
                     <Button Content="Enable" Command="{Binding EnableCommand}" />
                     <Button Content="Disable" Command="{Binding DisableCommand}" />
                     <Button Content="Remove..." Command="{Binding RemoveCommand}" Style="{StaticResource Button.Danger}" />
@@ -22,6 +22,7 @@
                     <Button Content="Export CSV" Command="{Binding ExportCommand}" />
                     <Button Content="Refresh" Command="{Binding RefreshCommand}" />
                 </WrapPanel>
+                <v:QuickActionsPanel DataContext="{Binding QuickActions}" Margin="0,0,0,8" />
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <TextBox Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged, Delay=200}" Width="300" ToolTip="Filter by name, address or model" />
                     <ComboBox ItemsSource="{Binding Recorders}" SelectedItem="{Binding RecorderFilter}" Width="240" Margin="8,0,0,0" />

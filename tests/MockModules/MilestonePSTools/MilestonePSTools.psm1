@@ -40,9 +40,30 @@ function Reset-MockSite {
         (New-MockItem HardwareDriver @{ Number = 421; Name = 'Universal 16 channel driver'; GroupName = 'Universal'; DriverType = 'Camera'; Path = 'HardwareDriver[aaaaaaaa-0000-0000-0000-000000000421]'; Id = [guid]'aaaaaaaa-0000-0000-0000-000000000421' })
     )
     $script:Roles = @(
-        (New-MockItem Role @{ Name = 'Administrators'; Id = [guid]'44444444-0000-0000-0000-000000000001'; RoleType = 'Adminstrative'; Description = 'Built-in' }),
-        (New-MockItem Role @{ Name = 'Operators'; Id = [guid]'44444444-0000-0000-0000-000000000002'; RoleType = 'UserDefined'; Description = '' })
+        (New-MockItem Role @{ Name = 'Administrators'; Id = [guid]'44444444-0000-0000-0000-000000000001'; Path = 'Role[44444444-0000-0000-0000-000000000001]'; RoleType = 'Adminstrative'; Description = 'Built-in' }),
+        (New-MockItem Role @{ Name = 'Operators'; Id = [guid]'44444444-0000-0000-0000-000000000002'; Path = 'Role[44444444-0000-0000-0000-000000000002]'; RoleType = 'UserDefined'; Description = '' })
     )
+    $script:Sites = @(
+        (New-MockSiteItem 'Mock Site' 'http://mgmt.example.local/'),
+        (New-MockSiteItem 'Mock Child Site' 'http://child.example.local/')
+    )
+    $script:SelectedSite = $script:Sites[0]
+    $script:BasicUsers = New-Object System.Collections.Generic.List[object]
+    $script:BasicUsers.Add((New-MockItem BasicUser @{ Name = 'operator1'; Id = [guid]'55555555-0000-0000-0000-000000000001'; Path = 'BasicUser[55555555-0000-0000-0000-000000000001]'; Description = ''; Status = 'Enabled'; CanChangePassword = $true; ForcePasswordChange = $false; IsExternal = $false }))
+    $script:BasicUserPasswords = @{}
+    $script:Rules = New-Object System.Collections.Generic.List[object]
+    foreach ($r in @(@{ n = 'Default Record on Motion Rule'; e = $true }, @{ n = 'Night alarm'; e = $false })) {
+        $rid = [guid]::NewGuid()
+        $script:Rules.Add((New-MockItem Rule @{ DisplayName = $r.n; Name = $r.n; Enabled = $r.e; Id = $rid; Path = "Rule[$rid]" }))
+    }
+    $script:ViewGroups = New-Object System.Collections.Generic.List[object]
+    $vgid = [guid]::NewGuid()
+    $script:ViewGroups.Add((New-MockItem ViewGroup @{ Name = 'Lobby views'; DisplayName = 'Lobby views'; Description = ''; Id = $vgid; Path = "ViewGroup[$vgid]"; ChildCount = 2 }))
+    $script:RoleMembers = @{}
+    $script:RoleMembers[$script:Roles[1].Path] = New-Object System.Collections.Generic.List[object]
+    $script:RoleMembers[$script:Roles[1].Path].Add((New-MockUser 'CONTOSO\jdoe' 'S-1-5-21-1000-1000-1000-1101'))
+    $script:RoleMembers[$script:Roles[1].Path].Add((New-MockUser 'CONTOSO\asmith' 'S-1-5-21-1000-1000-1000-1102'))
+    $script:DeviceGroups = @{}
     Add-MockHardware -Recorder $rs1 -Name 'Lobby encoder' -Address 'http://10.1.20.10/' -Channels 4 -Enabled $true -Password 'enc0der!'
     Add-MockHardware -Recorder $rs1 -Name 'Parking' -Address 'http://10.1.20.11/' -Channels 1 -Enabled $false -Password 'park1ng!'
     Add-MockHardware -Recorder $rs2 -Name 'Warehouse' -Address 'http://10.1.30.5/' -Channels 1 -Enabled $true -Password 'wareh0use!'
@@ -68,6 +89,17 @@ function Add-MockHardware($Recorder, [string]$Name, [string]$Address, [int]$Chan
                 }))
     }
     $hw
+}
+
+function New-MockSiteItem([string]$Name, [string]$Uri) {
+    $site = [pscustomobject]@{ Name = $Name; FQID = "ServerId: $Uri" }
+    $site.PSObject.TypeNames.Insert(0, 'VideoOS.Platform.Item')
+    $site
+}
+
+function New-MockUser([string]$AccountName, [string]$Sid) {
+    $uid = [guid]::NewGuid()
+    New-MockItem User @{ AccountName = $AccountName.Split('\')[-1]; Domain = $AccountName.Split('\')[0]; DisplayName = $AccountName; Name = $AccountName; Sid = $Sid; IdentityType = 'WindowsUser'; Id = $uid; Path = "User[$Sid]" }
 }
 
 function Assert-MockConnected {
@@ -119,11 +151,28 @@ function Test-VmsConnection {
 function Get-VmsSite {
     [CmdletBinding()]
     [RequiresVmsConnection()]
-    param([switch] $ListAvailable, [Parameter(Position = 0)][string] $Name)
+    param([switch] $ListAvailable, [Parameter(Position = 0)][string] $Name = '*')
     Assert-MockConnected
-    $site = [pscustomobject]@{ Name = 'Mock Site'; FQID = 'ServerId: mgmt.example.local' }
-    $site.PSObject.TypeNames.Insert(0, 'VideoOS.Platform.Item')
-    $site
+    if ($ListAvailable) { $script:Sites | Where-Object Name -Like $Name } else { $script:SelectedSite }
+}
+
+function Select-VmsSite {
+    [CmdletBinding(DefaultParameterSetName = 'ByName')]
+    [RequiresVmsConnection()]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Site')][object] $Site,
+        [Parameter(Position = 0, ParameterSetName = 'ByName')][string] $Name,
+        [Parameter(ParameterSetName = 'MainSite')][switch] $MainSite
+    )
+    Assert-MockConnected
+    $target = switch ($PSCmdlet.ParameterSetName) {
+        'Site' { $script:Sites | Where-Object Name -EQ $Site.Name }
+        'ByName' { $script:Sites | Where-Object Name -EQ $Name }
+        'MainSite' { $script:Sites[0] }
+    }
+    if (-not $target) { throw "Site not found." }
+    $script:SelectedSite = $target
+    $target
 }
 
 function Get-VmsManagementServer {
@@ -131,7 +180,7 @@ function Get-VmsManagementServer {
     [RequiresVmsConnection()]
     param()
     Assert-MockConnected
-    New-MockItem ManagementServer @{ Name = 'Mock Site'; ComputerName = 'MGMT01'; Version = '25.2.4815.1'; Id = [guid]'22222222-0000-0000-0000-000000000001'; Description = '' }
+    New-MockItem ManagementServer @{ Name = $script:SelectedSite.Name; ComputerName = $(if ($script:SelectedSite -eq $script:Sites[0]) { 'MGMT01' } else { 'CHILD01' }); Version = '25.2.4815.1'; Id = [guid]'22222222-0000-0000-0000-000000000001'; Description = '' }
 }
 
 function Get-VmsRecordingServer {
@@ -517,6 +566,332 @@ function Select-Camera {
     [RequiresInteractiveSession()]
     param([string] $Title, [switch] $SingleSelect, [switch] $AllowFolders, [switch] $AllowServers, [switch] $RemoveDuplicates, [switch] $OutputAsItem)
     throw 'Mock: Select-Camera would open a dialog.'
+}
+
+function Get-VmsBasicUser {
+    [CmdletBinding()]
+    [RequiresVmsConnection()]
+    param([Parameter(Position = 0)][string] $Name = '*', [Parameter(Position = 1)][ValidateSet('Enabled', 'LockedOutByAdmin', 'LockedOutBySystem')][string] $Status, [switch] $External)
+    Assert-MockConnected
+    $script:BasicUsers | Where-Object { $_.Name -like $Name -and (-not $Status -or $_.Status -eq $Status) }
+}
+
+function New-VmsBasicUser {
+    [CmdletBinding()]
+    [RequiresVmsConnection()]
+    param(
+        [Parameter(Mandatory, Position = 0)][string] $Name,
+        [Parameter(Mandatory, Position = 1)][securestring] $Password,
+        [Parameter(Position = 2)][string] $Description,
+        [Parameter(Position = 3)][bool] $CanChangePassword = $true,
+        [Parameter(Position = 4)][bool] $ForcePasswordChange,
+        [Parameter(Position = 5)][ValidateSet('Enabled', 'LockedOutByAdmin')][string] $Status = 'Enabled'
+    )
+    Assert-MockConnected
+    if ($script:BasicUsers | Where-Object Name -EQ $Name) { throw "A basic user named '$Name' already exists." }
+    $id = [guid]::NewGuid()
+    $u = New-MockItem BasicUser @{ Name = $Name; Id = $id; Path = "BasicUser[$id]"; Description = $Description; Status = $Status; CanChangePassword = $CanChangePassword; ForcePasswordChange = $ForcePasswordChange; IsExternal = $false }
+    $script:BasicUsers.Add($u)
+    $script:BasicUserPasswords[$u.Path] = [pscredential]::new('x', $Password).GetNetworkCredential().Password
+    $u
+}
+
+function Set-VmsBasicUser {
+    [CmdletBinding(SupportsShouldProcess)]
+    [RequiresVmsConnection()]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline, Position = 0)][object] $BasicUser,
+        [Parameter(Position = 1)][securestring] $Password,
+        [Parameter(Position = 2)][string] $Description,
+        [Parameter(Position = 3)][bool] $CanChangePassword,
+        [Parameter(Position = 4)][bool] $ForcePasswordChange,
+        [Parameter(Position = 5)][ValidateSet('Enabled', 'LockedOutByAdmin')][string] $Status,
+        [switch] $PassThru
+    )
+    process {
+        Assert-MockConnected
+        if ($PSCmdlet.ShouldProcess($BasicUser.Name, 'Update basic user')) {
+            foreach ($p in 'Description', 'CanChangePassword', 'ForcePasswordChange', 'Status') { if ($PSBoundParameters.ContainsKey($p)) { $BasicUser.$p = $PSBoundParameters[$p] } }
+            if ($Password) { $script:BasicUserPasswords[$BasicUser.Path] = [pscredential]::new('x', $Password).GetNetworkCredential().Password }
+            if ($PassThru) { $BasicUser }
+        }
+    }
+}
+
+function Remove-VmsBasicUser {
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    [RequiresVmsConnection()]
+    param([Parameter(Mandatory, ValueFromPipeline, Position = 0)][object[]] $InputObject)
+    process {
+        Assert-MockConnected
+        foreach ($u in $InputObject) {
+            if ($PSCmdlet.ShouldProcess($u.Name, 'Remove basic user')) { $script:BasicUsers.Remove(($script:BasicUsers | Where-Object Path -EQ $u.Path)) | Out-Null }
+        }
+    }
+}
+
+function New-VmsRole {
+    [CmdletBinding(SupportsShouldProcess)]
+    [RequiresVmsConnection()]
+    param(
+        [Parameter(Mandatory, Position = 0)][string] $Name,
+        [Parameter(Position = 1)][string] $Description,
+        [switch] $AllowSmartClientLogOn, [switch] $AllowMobileClientLogOn, [switch] $AllowWebClientLogOn,
+        [switch] $DualAuthorizationRequired, [switch] $MakeUsersAnonymousDuringPTZSession,
+        [Parameter(Position = 2)][object] $ClientLogOnTimeProfile, [Parameter(Position = 3)][object] $DefaultTimeProfile, [Parameter(Position = 4)][object] $ClientProfile,
+        [switch] $PassThru
+    )
+    Assert-MockConnected
+    if ($PSCmdlet.ShouldProcess($Name, 'Create role')) {
+        $id = [guid]::NewGuid()
+        $r = New-MockItem Role @{ Name = $Name; Id = $id; Path = "Role[$id]"; RoleType = 'UserDefined'; Description = $Description }
+        $script:Roles = @($script:Roles) + $r
+        $script:RoleMembers[$r.Path] = New-Object System.Collections.Generic.List[object]
+        if ($PassThru) { $r }
+    }
+}
+
+function Get-VmsRoleMember {
+    [CmdletBinding()]
+    [RequiresVmsConnection()]
+    param([Parameter(ValueFromPipeline, Position = 0)][object[]] $Role)
+    process {
+        Assert-MockConnected
+        foreach ($r in $(if ($Role) { $Role } else { $script:Roles })) { if ($script:RoleMembers.ContainsKey($r.Path)) { $script:RoleMembers[$r.Path] } }
+    }
+}
+
+function Add-VmsRoleMember {
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ByAccountName')]
+    [RequiresVmsConnection()]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline, Position = 0)][object[]] $Role,
+        [Parameter(Mandatory, Position = 1, ParameterSetName = 'ByAccountName')][string[]] $AccountName,
+        [Parameter(Mandatory, Position = 1, ParameterSetName = 'BySid')][string[]] $Sid
+    )
+    process {
+        Assert-MockConnected
+        foreach ($r in $Role) {
+            if (-not $script:RoleMembers.ContainsKey($r.Path)) { $script:RoleMembers[$r.Path] = New-Object System.Collections.Generic.List[object] }
+            foreach ($a in $(if ($AccountName) { $AccountName } else { $Sid })) {
+                if ($a -like 'nobody*') { Write-Error "The account '$a' could not be resolved to a SID."; continue }
+                if ($PSCmdlet.ShouldProcess($r.Name, "Add member $a")) { $script:RoleMembers[$r.Path].Add((New-MockUser ($(if ($a -like '*\*') { $a } else { "CONTOSO\$a" })) ('S-1-5-21-1000-1000-1000-' + (2000 + $script:RoleMembers[$r.Path].Count)))) }
+            }
+        }
+    }
+}
+
+function Remove-VmsRoleMember {
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'ByUser')]
+    [RequiresVmsConnection()]
+    param(
+        [Parameter(Mandatory, Position = 0)][object[]] $Role,
+        [Parameter(Mandatory, ValueFromPipeline, Position = 1, ParameterSetName = 'ByUser')][object[]] $User,
+        [Parameter(Mandatory, Position = 1, ParameterSetName = 'BySid')][string[]] $Sid
+    )
+    process {
+        Assert-MockConnected
+        $sids = if ($User) { $User | ForEach-Object Sid } else { $Sid }
+        foreach ($r in $Role) {
+            foreach ($x in $sids) {
+                $m = $script:RoleMembers[$r.Path] | Where-Object Sid -EQ $x
+                if (-not $m) { Write-Error "SID $x is not a member of role '$($r.Name)'."; continue }
+                if ($PSCmdlet.ShouldProcess($r.Name, "Remove member $($m.DisplayName)")) { $script:RoleMembers[$r.Path].Remove($m) | Out-Null }
+            }
+        }
+    }
+}
+
+function Get-VmsRule {
+    [CmdletBinding(DefaultParameterSetName = 'Name')]
+    [RequiresVmsConnection()]
+    [RequiresVmsVersion('20.1')]
+    param([Parameter(Position = 0, ParameterSetName = 'Name')][string] $Name = '*', [Parameter(Mandatory, ParameterSetName = 'Id')][guid] $Id)
+    Assert-MockConnected
+    if ($PSCmdlet.ParameterSetName -eq 'Id') { return $script:Rules | Where-Object Id -EQ $Id }
+    $script:Rules | Where-Object DisplayName -Like $Name
+}
+
+function Set-VmsRule {
+    [CmdletBinding(SupportsShouldProcess)]
+    [RequiresVmsConnection()]
+    [RequiresVmsVersion('20.1')]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline, Position = 0)][object] $Rule,
+        [Parameter(Position = 1)][string] $Name,
+        [Parameter(Position = 2)][bool] $Enabled,
+        [Parameter(Position = 3)][hashtable] $Properties,
+        [switch] $PassThru
+    )
+    process {
+        Assert-MockConnected
+        if ($PSCmdlet.ShouldProcess($Rule.DisplayName, 'Update rule')) {
+            if ($PSBoundParameters.ContainsKey('Enabled')) { $Rule.Enabled = $Enabled }
+            if ($PSBoundParameters.ContainsKey('Name')) { $Rule.DisplayName = $Name; $Rule.Name = $Name }
+            if ($PassThru) { $Rule }
+        }
+    }
+}
+
+function Get-VmsViewGroup {
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
+    [RequiresVmsConnection()]
+    [RequiresVmsVersion('21.1')]
+    param([Parameter(ValueFromPipeline, ParameterSetName = 'Default')][object] $Parent, [Parameter(Position = 0, ParameterSetName = 'Default')][string[]] $Name = '*', [Parameter(ParameterSetName = 'Default')][switch] $Recurse, [Parameter(Mandatory, Position = 0, ParameterSetName = 'ById')][guid] $Id)
+    Assert-MockConnected
+    if ($PSCmdlet.ParameterSetName -eq 'ById') { return $script:ViewGroups | Where-Object Id -EQ $Id }
+    $script:ViewGroups | Where-Object { $n = $_.Name; @($Name | Where-Object { $n -like $_ }).Count -gt 0 }
+}
+
+function New-VmsViewGroup {
+    [CmdletBinding()]
+    [RequiresVmsConnection()]
+    [RequiresVmsVersion('21.1')]
+    param([Parameter(Mandatory, Position = 0)][string] $Name, [object] $Parent, [string] $Description, [switch] $Force)
+    Assert-MockConnected
+    $id = [guid]::NewGuid()
+    $vg = New-MockItem ViewGroup @{ Name = $Name; DisplayName = $Name; Description = $Description; Id = $id; Path = "ViewGroup[$id]"; ChildCount = 0 }
+    $script:ViewGroups.Add($vg)
+    $vg
+}
+
+function Set-VmsViewGroup {
+    [CmdletBinding(SupportsShouldProcess)]
+    [RequiresVmsConnection()]
+    [RequiresVmsVersion('21.1')]
+    param([Parameter(Mandatory, ValueFromPipeline, Position = 0)][object] $ViewGroup, [Parameter(Position = 1)][string] $Name, [Parameter(Position = 2)][string] $Description, [switch] $PassThru)
+    process {
+        Assert-MockConnected
+        if ($PSCmdlet.ShouldProcess($ViewGroup.DisplayName, 'Update view group')) {
+            if ($PSBoundParameters.ContainsKey('Name')) { $ViewGroup.Name = $Name; $ViewGroup.DisplayName = $Name }
+            if ($PSBoundParameters.ContainsKey('Description')) { $ViewGroup.Description = $Description }
+            if ($PassThru) { $ViewGroup }
+        }
+    }
+}
+
+function Remove-VmsViewGroup {
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    [RequiresVmsConnection()]
+    [RequiresVmsVersion('21.1')]
+    param([Parameter(Mandatory, ValueFromPipeline, Position = 0)][object[]] $ViewGroup, [switch] $Recurse)
+    process {
+        Assert-MockConnected
+        foreach ($vg in $ViewGroup) {
+            if ($vg.ChildCount -gt 0 -and -not $Recurse) { Write-Error "View group '$($vg.Name)' is not empty. Use -Recurse to remove its contents."; continue }
+            if ($PSCmdlet.ShouldProcess($vg.Name, 'Remove view group')) { $script:ViewGroups.Remove(($script:ViewGroups | Where-Object Path -EQ $vg.Path)) | Out-Null }
+        }
+    }
+}
+
+function Add-VmsStorage {
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'WithoutEncryption')]
+    [RequiresVmsConnection()]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline)][object] $RecordingServer,
+        [Parameter(Mandatory)][string] $Name,
+        [string] $Description,
+        [Parameter(Mandatory)][string] $Path,
+        [timespan] $Retention,
+        [Parameter(Mandatory)][int] $MaximumSizeMB,
+        [switch] $Default,
+        [switch] $EnableSigning,
+        [Parameter(Mandatory, ParameterSetName = 'WithEncryption')][string] $EncryptionMethod,
+        [Parameter(Mandatory, ParameterSetName = 'WithEncryption')][securestring] $Password
+    )
+    process {
+        Assert-MockConnected
+        if ($script:Storage | Where-Object { $_.ParentItemPath -eq $RecordingServer.Path -and $_.Name -eq $Name }) { throw "Storage '$Name' already exists on $($RecordingServer.Name)." }
+        if ($PSCmdlet.ShouldProcess($RecordingServer.Name, "Add storage $Name at $Path")) {
+            $id = [guid]::NewGuid()
+            $minutes = if ($PSBoundParameters.ContainsKey('Retention')) { [int]$Retention.TotalMinutes } else { 10080 }
+            $st = New-MockItem Storage @{ Name = $Name; Id = $id; Path = "Storage[$id]"; ParentItemPath = $RecordingServer.Path; DiskPath = $Path; RetainMinutes = $minutes; MaxSize = $MaximumSizeMB; IsDefault = [bool]$Default; Description = $Description }
+            $script:Storage = @($script:Storage) + $st
+            $st
+        }
+    }
+}
+
+function Remove-VmsStorage {
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High', DefaultParameterSetName = 'ByName')]
+    [RequiresVmsConnection()]
+    param(
+        [Parameter(Mandatory, ParameterSetName = 'ByName')][object] $RecordingServer,
+        [Parameter(Mandatory, ParameterSetName = 'ByName')][string] $Name,
+        [Parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'ByStorage')][object] $Storage
+    )
+    process {
+        Assert-MockConnected
+        $st = if ($Storage) { $script:Storage | Where-Object Path -EQ $Storage.Path } else { $script:Storage | Where-Object { $_.ParentItemPath -eq $RecordingServer.Path -and $_.Name -eq $Name } }
+        if (-not $st) { Write-Error 'Storage not found.'; return }
+        # Mirrors the documented rule: only non-default storages that no device records to are removed.
+        if ($st.IsDefault) { Write-Error "Storage '$($st.Name)' is the default storage and cannot be removed."; return }
+        if ($script:Cameras | Where-Object RecordingStorage -EQ $st.Path) { Write-Error "Storage '$($st.Name)' is in use by one or more devices."; return }
+        if ($PSCmdlet.ShouldProcess($st.Name, 'Remove storage')) { $script:Storage = @($script:Storage | Where-Object Path -NE $st.Path) }
+    }
+}
+
+function New-VmsDeviceGroup {
+    [CmdletBinding(DefaultParameterSetName = 'ByName')]
+    [RequiresVmsConnection()]
+    param(
+        [Parameter(ValueFromPipeline, ParameterSetName = 'ByName')][object] $ParentGroup,
+        [Parameter(Mandatory, Position = 0, ParameterSetName = 'ByName')][string[]] $Name,
+        [Parameter(Mandatory, Position = 0, ParameterSetName = 'ByPath')][string[]] $Path,
+        [Parameter(Position = 1)][string] $Description,
+        [Parameter(Position = 2)][ValidateSet('Camera', 'Microphone', 'Speaker', 'Input', 'Output', 'Metadata')][string] $Type = 'Camera'
+    )
+    Assert-MockConnected
+    foreach ($p in $Path) {
+        # Like the real command: returns the existing group or creates the missing levels.
+        if (-not $script:DeviceGroups.ContainsKey($p)) { $script:DeviceGroups[$p] = New-Object System.Collections.Generic.List[guid] }
+        $g = New-MockItem CameraGroup @{ Name = ($p.TrimEnd('/') -split '/')[-1]; Path = "CameraGroup[$p]"; GroupPath = $p }
+        $g
+    }
+}
+
+function Add-VmsDeviceGroupMember {
+    [CmdletBinding(DefaultParameterSetName = 'ByObject')]
+    [RequiresVmsConnection()]
+    param(
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)][object] $Group,
+        [Parameter(Mandatory, Position = 0, ParameterSetName = 'ByObject')][object[]] $Device,
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName, Position = 1, ParameterSetName = 'ById')][guid[]] $DeviceId
+    )
+    process {
+        Assert-MockConnected
+        $ids = if ($Device) { $Device | ForEach-Object Id } else { $DeviceId }
+        foreach ($id in $ids) {
+            if (-not ($script:Cameras | Where-Object Id -EQ $id)) { Write-Error "Failed to add device group member: Camera[$id] not found."; continue }
+            if (-not $script:DeviceGroups[$Group.GroupPath].Contains($id)) { $script:DeviceGroups[$Group.GroupPath].Add($id) }
+        }
+    }
+}
+
+function Import-VmsHardware {
+    # Simulates the effect only: the real command parses CSV or its Export-VmsHardware workbook format.
+    [CmdletBinding(DefaultParameterSetName = 'Path')]
+    [RequiresVmsConnection()]
+    param(
+        [Parameter(Mandatory, Position = 0, ParameterSetName = 'Path')][string[]] $Path,
+        [Parameter(Mandatory, ParameterSetName = 'LiteralPath')][string[]] $LiteralPath,
+        [object] $RecordingServer,
+        [pscredential[]] $Credential,
+        [switch] $UpdateExisting,
+        [char] $Delimiter = ','
+    )
+    Assert-MockConnected
+    foreach ($file in $(if ($LiteralPath) { $LiteralPath } else { $Path })) {
+        if (-not (Test-Path -LiteralPath $file)) { Write-Error "File '$file' not found."; continue }
+        Write-Progress -Activity "Importing hardware configuration from $file" -PercentComplete 50
+        $rec = if ($RecordingServer) { $RecordingServer } else { $script:RecordingServers[0] }
+        $address = 'http://10.9.9.9/'
+        $existing = $script:Hardware | Where-Object Address -EQ $address
+        if ($existing -and -not $UpdateExisting) { Write-Verbose "Skipping the hardware at $address because it is already added to $($rec.Name)."; continue }
+        if ($existing) { $existing.Description = "Updated from $([io.path]::GetFileName($file))"; continue }
+        $pwd = if ($Credential) { $Credential[0].GetNetworkCredential().Password } else { 'default' }
+        $null = Add-MockHardware -Recorder $rec -Name ("Imported " + [io.path]::GetFileNameWithoutExtension($file)) -Address $address -Channels 2 -Enabled $true -Password $pwd
+    }
 }
 
 function Invoke-MockScriptBlockProbe {

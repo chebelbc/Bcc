@@ -1,37 +1,88 @@
 {
-  "$comment": "Which MilestonePSTools commands the GUI uses, and where. Input for tools/catalog/generate_docs.py (SUPPORTED_COMMANDS.md). CatalogDriftTests verify that every listed command exists in the catalog and that every command the application builds (PsCommands) is listed. Keep entries to commands with a real call site.",
+  "$comment": "Which MilestonePSTools commands the GUI uses, and where. Input for tools/catalog/generate_docs.py (SUPPORTED_COMMANDS.md). CatalogDriftTests verify that every listed command exists in the catalog and that every command the application builds (PsCommands builders and quick actions) is listed. Keep entries to commands with a real call site.",
   "wizards": {
     "Start-VmsHardwareScan": [
       "Add Hardware",
-      "CSV Onboarding"
+      "Bulk Onboarding"
     ],
     "Get-VmsHardwareDriver": [
       "Add Hardware",
-      "CSV Onboarding"
+      "Bulk Onboarding"
     ],
     "Add-VmsHardware": [
       "Add Hardware",
-      "CSV Onboarding"
+      "Bulk Onboarding"
     ],
     "Set-VmsCamera": [
       "Add Hardware",
-      "CSV Onboarding",
+      "Bulk Onboarding",
       "Camera Edit",
       "Job Builder"
     ],
     "Set-VmsDeviceStorage": [
       "Add Hardware",
-      "CSV Onboarding",
+      "Bulk Onboarding",
       "Move Storage"
     ],
     "Set-VmsHardware": [
-      "Enable/Disable Hardware"
+      "Enable/Disable Hardware",
+      "Edit Hardware",
+      "Update Device Credentials"
     ],
     "Remove-VmsHardware": [
       "Remove Hardware"
     ],
     "Connect-Vms": [
       "Connect"
+    ],
+    "Import-VmsHardware": [
+      "Bulk Onboarding (MilestonePSTools workbook)"
+    ],
+    "New-VmsDeviceGroup": [
+      "Add Hardware",
+      "Bulk Onboarding"
+    ],
+    "Add-VmsDeviceGroupMember": [
+      "Add Hardware",
+      "Bulk Onboarding"
+    ],
+    "Add-VmsStorage": [
+      "Add Recording Storage"
+    ],
+    "Remove-VmsStorage": [
+      "Remove Recording Storage"
+    ],
+    "New-VmsRole": [
+      "New Role"
+    ],
+    "Add-VmsRoleMember": [
+      "Add Members to Role"
+    ],
+    "Remove-VmsRoleMember": [
+      "Remove from Role"
+    ],
+    "New-VmsBasicUser": [
+      "New Basic User"
+    ],
+    "Set-VmsBasicUser": [
+      "Enable/Lock Out Basic Users",
+      "Reset Password"
+    ],
+    "Remove-VmsBasicUser": [
+      "Remove Basic Users"
+    ],
+    "Set-VmsRule": [
+      "Enable/Disable Rules",
+      "Rename Rule"
+    ],
+    "New-VmsViewGroup": [
+      "New View Group"
+    ],
+    "Set-VmsViewGroup": [
+      "Rename View Group"
+    ],
+    "Remove-VmsViewGroup": [
+      "Remove View Groups"
     ]
   },
   "screens": {
@@ -68,7 +119,8 @@
       "Storage"
     ],
     "Get-VmsDeviceStatus": [
-      "Maintenance"
+      "Maintenance",
+      "Reports"
     ],
     "Get-VmsRole": [
       "Users & Roles"
@@ -90,10 +142,20 @@
     ],
     "Get-VmsCameraReport": [
       "Reports"
+    ],
+    "Get-VmsSite": [
+      "System (site selection)"
+    ],
+    "Select-VmsSite": [
+      "System (site selection)"
+    ],
+    "Get-VmsRoleMember": [
+      "Users & Roles"
     ]
   },
   "appManagedImplemented": [
     "Connect-Vms",
-    "Disconnect-Vms"
+    "Disconnect-Vms",
+    "Select-VmsSite"
   ]
 }
